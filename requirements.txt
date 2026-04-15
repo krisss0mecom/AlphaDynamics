@@ -1,0 +1,8 @@
+torch>=2.0
+torchdiffeq>=0.2.5
+numpy<2
+scipy
+mdtraj
+h5py
+huggingface_hub
+matplotlib
