@@ -21,26 +21,27 @@ to AlphaFold (which predicts static structure from sequence).
 
 ## Headline results
 
-### mdCATH unified benchmark — 37 protein domains
+### mdCATH uniform benchmark — 57 protein domains across two size classes
 
-Uniform protocol (CHARMM36m + TIP3P water at 348K, 5 replicas × 440 frames
-per domain) on 37 randomly-selected 50-residue CATH domains from the
-mdCATH dataset (Mirarchi et al., Sci Data 2024, 5398 proteins).
+Uniform protocol (CHARMM36m + TIP3P water at 348K, 5 replicas per domain)
+on randomly-selected CATH domains from the mdCATH dataset (Mirarchi et al.,
+Sci Data 2024, 5398 proteins).
 
-| Stat | Value |
-|---|---|
-| Domains | 37 |
-| **AlphaDynamics wins** | **37/37 (100%)** |
-| Mean ΔNLL vs MLP | **−472 nats** |
-| AlphaDynamics mean NLL | **108.0** |
-| MLP mean NLL | 580.0 |
-| AlphaDynamics vs MLP ratio | **5.4× better** on average |
+| Size class | N residues | Domains | Win rate | Mean ratio | Best ratio |
+|---|---|---|---|---|---|
+| Small | 50 | 37 | **37/37** | 5.4× | 11.2× (1lwjA03) |
+| **Medium** | **100** | **20** | **20/20** | **6.3×** | **21.7× (5cmbA02)** |
+| **Total** | — | **57** | **57/57 (100%)** | — | — |
 
-Best ratio: 1lwjA03 (11.2× better than MLP).
-P-value that 37/37 is random: ≈ 7.3 × 10⁻¹².
+P-value that 57/57 is random: ≈ 7 × 10⁻¹⁸.
 
-See [results/mdcath_benchmark_results.md](results/mdcath_benchmark_results.md)
-for full per-domain table.
+**Advantage scales with chain length** — mean ratio increased from 5.4× at
+N=50 to 6.3× at N=100. MLP's NLL grows much faster than AlphaDynamics' with
+chain length (MLP 580 → 687 nats, AlphaDynamics 108 → 109 nats).
+
+Full tables:
+- [results/mdcath_benchmark_results.md](results/mdcath_benchmark_results.md) — N=50 (37 domains)
+- [results/mdcath_N100_results.md](results/mdcath_N100_results.md) — N=100 (20 domains)
 
 ### Rollout stability (2500-step autoregressive)
 
@@ -146,11 +147,13 @@ of torus dynamics** with minimal parameters and ODE-based inductive bias.
 
 ## Status
 
-- [x] mdCATH 37-domain unified benchmark — 37/37 wins
+- [x] mdCATH 37-domain unified benchmark at N=50 — 37/37 wins
+- [x] mdCATH 20-domain scaling benchmark at N=100 — 20/20 wins
 - [x] Multi-seed validation on pentapeptide (p=0.0001)
 - [x] Rollout stability (no explosion, moderate distribution preservation)
-- [ ] Scaling to larger proteins (N=100, 150, 200 residues)
-- [ ] Direct head-to-head vs Timewarp, AlphaFlow
+- [ ] Scaling to N=150, N=200 residues
+- [ ] Direct head-to-head vs Timewarp, AlphaFlow, bioEmu
+- [ ] CASP Refinement targets (CASP15 / CASP16)
 - [ ] arXiv preprint
 - [ ] NeurIPS ML4Sci / ICLR workshop submission
 
