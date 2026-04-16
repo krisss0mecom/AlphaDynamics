@@ -2,53 +2,53 @@
 title: "AlphaDynamics: Coupled Phase Oscillators for Protein Torsion Dynamics Prediction"
 author: "Krzysztof Gwóźdź (Independent Researcher, Poland)"
 date: "2026-04-15"
-bibliography: references.bib
 ---
 
 # Abstract
 
-We introduce AlphaDynamics, a neural propagator for protein conformational
-dynamics operating directly on the backbone torsion manifold
-$\mathbb{T}^N = (\mathbb{S}^1)^{2N}$. The model couples $N$ phase oscillators
-through a CNOT-inspired gating mechanism and evolves them under a continuous
-ordinary differential equation solved by a fourth-order Runge–Kutta adjoint
-integrator. Final phases are mapped to a mixture of axis-independent von Mises
-densities on $\mathbb{T}^N$ through a shallow feed-forward head. Despite its
-compact size (348K parameters, roughly 1000-fold smaller than the 396M
-parameters of Timewarp), AlphaDynamics achieves a 57-out-of-57 win rate against
-a matched multilayer-perceptron baseline on the mdCATH benchmark
-[@Mirarchi2024], covering two size regimes (37 domains at $N_\text{res}=50$ and
-20 domains at $N_\text{res}=100$) under an identical simulation protocol
-(CHARMM36m + TIP3P water at 348 K, five replicas per domain). The mean
-NLL advantage is 5.4× at $N_\text{res}=50$ and grows to 6.3× at
-$N_\text{res}=100$, with individual ratios reaching up to 21.7× on the
-most ordered domains. A 2500-step autoregressive rollout test shows that
-predicted trajectories remain stable (no exponential blow-up) and preserve
-per-residue Ramachandran distributions qualitatively. On a single RTX-5090
-AlphaDynamics generates one nanosecond of predicted trajectory in
-approximately 16 ms, corresponding to a 2000-fold speed-up over vacuum
-OpenMM simulation of a comparably sized system. We propose two empirical
-laws: (i) the optimal ODE integration horizon $t_\text{max}$ scales with
-the temporal correlation length of the training data, and (ii) the MLP /
-AlphaDynamics NLL ratio is inversely correlated with the identity baseline,
-indicating that phase coupling is most beneficial for well-ordered proteins.
+We introduce AlphaDynamics, a compact per-system neural propagator for
+protein conformational dynamics operating directly on the backbone torsion
+manifold $\mathbb{T}^N = (\mathbb{S}^1)^{2N}$. The model couples $N$
+phase oscillators via learnable pairwise interactions and evolves them
+under a continuous ordinary differential equation solved by a fourth-order
+Runge–Kutta adjoint integrator. Final phases are mapped to a mixture of
+axis-independent von Mises densities on $\mathbb{T}^N$ through a shallow
+feed-forward head. Unlike transferable surrogates such as Timewarp
+(Klein et al. 2023), which amortise a single large model across many
+peptides, AlphaDynamics trains a lightweight specialist (348K parameters)
+per protein domain. On a 57-domain subset of the mdCATH benchmark
+(Mirarchi et al. 2024), covering two size regimes (37 domains at
+$N_\text{res}=50$ and 20 domains at $N_\text{res}=100$) under an
+identical simulation protocol (CHARMM36m + TIP3P water at 348 K, five
+replicas per domain), AlphaDynamics outperforms a matched
+multilayer-perceptron baseline on every domain, with a mean NLL advantage
+of 5.4× at $N_\text{res}=50$ growing to 6.3× at $N_\text{res}=100$.
+A 2500-step autoregressive rollout test shows that predicted trajectories
+remain stable without exponential blow-up, though rollout fidelity
+requires a concentration-rescaling heuristic ($\kappa \to 30\kappa$)
+whose replacement remains an open problem. Ablation experiments confirm
+that the ODE integration is the critical architectural component.
+We report two empirical observations: (i) the optimal ODE integration
+horizon $t_\text{max}$ correlates with the temporal correlation length
+of the training data, and (ii) the NLL advantage over the MLP baseline
+is largest for conformationally ordered domains.
 
 # 1. Introduction
 
 The static protein-structure prediction problem, long considered one of
 the grand challenges of computational biology, has been substantially
-addressed by AlphaFold 2 and its successors [@Jumper2021;@Abramson2024].
+addressed by AlphaFold 2 and its successors (Jumper et al. 2021; Abramson et al. 2024).
 Attention has consequently shifted toward the harder question of
 *conformational dynamics*: how a folded protein moves in time, samples
 alternative states, and responds to ligands or mutations. Classical
-molecular dynamics (MD) [@Hollingsworth2018] provides an exact but
+molecular dynamics (MD) (Hollingsworth & Dror 2018) provides an exact but
 expensive answer; current state-of-the-art simulations rarely exceed
 millisecond time scales and require specialized hardware
-[@Lindorff-Larsen2011].
+(Lindorff-Larsen et al. 2011).
 
 Three families of machine-learning surrogates have emerged. First,
-*equilibrium samplers* such as bioEmu [@Lewis2024] and
-AlphaFlow / ESMFlow [@Jing2024AlphaFlow] generate statistically independent
+*equilibrium samplers* such as bioEmu (Lewis et al. 2024) and
+AlphaFlow / ESMFlow (Jing et al. 2024a) generate statistically independent
 structural ensembles conditioned on sequence, typically by combining an
 AlphaFold-style structure predictor with flow-matching or score-based
 generative modelling. These methods excel at enumerating metastable states
@@ -56,10 +56,10 @@ but do not return trajectories and therefore cannot quantify kinetic
 observables such as transition rates. Second, *AlphaFold-augmentation
 methods* subsample the multiple-sequence alignment or introduce
 experimental restraints (NMR, DEER) to coax alternative conformations
-from AlphaFold 2 [@WaymentSteele2024;@Sala2024]. These preserve the
+from AlphaFold 2 (Wayment-Steele et al. 2024; Sala et al. 2024). These preserve the
 static-prediction paradigm and again lack temporal continuity. Third,
 and most closely related to our work, *neural propagators* such as
-Timewarp [@Klein2023Timewarp] and MDGen [@Jing2024MDGen] predict the
+Timewarp (Klein et al. 2023) and MDGen (Jing et al. 2024b) predict the
 conformation of a peptide at a future time conditioned on its current
 Cartesian coordinates and velocities. Existing propagators operate in
 full Cartesian space and rely on large normalizing-flow or
@@ -70,42 +70,62 @@ In this work we take a different route. We observe that backbone
 dynamics lives on a product of circles, $\mathbb{T}^N$, and that the
 natural primitives for such a manifold are not Cartesian vectors but
 *phase oscillators*. Coupled phase oscillator networks have long been
-studied in non-linear dynamics [@Kuramoto1984;@Strogatz2000] and recently
-re-emerged as a general computational substrate [@Muscinelli2024]. We
-combine three ingredients: (i) a CNOT-inspired coupling kernel derived
-from quantum-computation analogy, giving each pair of oscillators an
-asymmetric, gated interaction; (ii) prime-ratio intrinsic frequencies
-and a golden-phyllotaxis anchor distribution that together break all
-continuous symmetries without introducing resonances; and (iii) a
-mixture-of-von-Mises output head that respects the underlying torus
-topology. The entire system is trained end-to-end by back-propagating
-through a Runge–Kutta adjoint ODE solver [@Chen2018NeuralODE].
+studied in non-linear dynamics (Kuramoto 1984; Strogatz 2000) and recently
+re-emerged as a general computational substrate (Muscinelli et al. 2024;
+Gwóźdź 2026a). We combine a learnable pairwise coupling between
+oscillators, evolved as a continuous ODE, with a mixture-of-von-Mises
+output head that respects the underlying torus topology. Ablation
+experiments (§4.9) confirm that the ODE integration is the critical
+component. The entire system is trained end-to-end by back-propagating
+through a Runge–Kutta adjoint ODE solver (Chen et al. 2018).
+
+We emphasise that AlphaDynamics is a *per-system* surrogate: a separate
+lightweight model is trained for each protein domain of interest. This
+contrasts with transferable surrogates such as Timewarp (Klein et al. 2023),
+which train a single large model on a library of peptides and generalise
+to unseen sequences. The two paradigms serve different use cases.
+Transferable surrogates are preferable when one needs rapid predictions
+across many systems without retraining; per-system surrogates are
+preferable when a single protein is studied in depth and training cost is
+low (AlphaDynamics trains in under 10 minutes on a single GPU).
+Direct parameter-count comparisons between the two paradigms are
+misleading, as transferable models amortise their capacity across many
+systems.
 
 The contributions of this paper are:
 
 1. **Architecture.** We present AlphaDynamics, a phase-oscillator neural
-   propagator for protein torsion dynamics with 348K parameters—nearly
-   four orders of magnitude smaller than Timewarp while operating on the
-   same physical task (§3).
+   propagator for protein torsion dynamics with 348K trainable parameters
+   per domain. The architecture exploits the torus topology of dihedral
+   angles through coupled oscillator dynamics rather than Cartesian
+   coordinates (§3). We note that this per-system design differs
+   fundamentally from transferable surrogates like Timewarp (396M
+   parameters amortised across peptide families); the two approaches
+   address complementary use cases.
 
 2. **Uniform benchmark.** We evaluate on a 57-domain subset of the
-   recently released mdCATH dataset [@Mirarchi2024] with an identical
-   simulation protocol across domains and two size regimes
-   ($N_\text{res}\in\{50,100\}$). AlphaDynamics wins on every domain
-   (§4).
+   mdCATH dataset (Mirarchi et al. 2024) under an identical simulation
+   protocol across domains and two size regimes
+   ($N_\text{res}\in\{50,100\}$), comparing against a matched MLP
+   baseline, a per-residue identity predictor, and a GAT-GNN baseline (§4).
 
-3. **Empirical laws.** We identify two empirical regularities relating
-   the optimal ODE horizon to the temporal correlation length of the
-   data, and the NLL advantage to the conformational order of the protein
-   (§4.4).
+3. **Empirical observations.** We report two trends: the optimal ODE
+   integration horizon correlates with the temporal correlation length of
+   the training data, and the NLL advantage over the MLP baseline is
+   largest for conformationally ordered domains (§4.4). These
+   observations are preliminary and require validation on larger and more
+   diverse protein sets.
 
-4. **Stability analysis.** Long (2500-step) autoregressive rollouts
-   preserve per-residue Ramachandran distributions qualitatively and do
-   not diverge (§4.5).
+4. **Rollout stability.** Long (2500-step) autoregressive rollouts do
+   not diverge, though distributional fidelity requires a
+   concentration-rescaling heuristic ($\kappa \to 30\kappa$) at sampling
+   time. We report this honestly as a current limitation (§4.5).
 
-5. **Speed.** On a single GPU, AlphaDynamics predicts one nanosecond of
-   trajectory in $\approx 16$ ms, a $2\times 10^3$-fold acceleration
-   over vacuum OpenMM (§4.9).
+5. **Inference cost.** On a single GPU, AlphaDynamics generates one
+   nanosecond of predicted trajectory in approximately 16 ms per domain.
+   We compare this to the wall-clock cost of explicit MD on the same
+   domain rather than to transferable surrogates operating on different
+   tasks (§4.10).
 
 # 2. Background
 
@@ -119,18 +139,36 @@ torus $\mathbb{T}^{2N_\text{res}}=\prod_i \mathbb{S}^1\times\mathbb{S}^1$.
 Representing conformations directly on this manifold avoids the
 topological artefacts of mapping onto $\mathbb{R}^n$ or $\mathbb{S}^2$.
 
-## 2.2 Coupled phase oscillators
+## 2.2 Coupled phase oscillators and phase-gate coupling
 
-A Kuramoto network [@Kuramoto1984] of $M$ phase oscillators with natural
+A Kuramoto network (Kuramoto 1984) of $M$ phase oscillators with natural
 frequencies $\omega_i$ and pairwise couplings $K_{ij}$ evolves as
 $\dot\varphi_i = \omega_i + \sum_j K_{ij}\sin(\varphi_j-\varphi_i)$. Such
 networks exhibit rich collective behaviour (synchronization, chimera
-states) and have been demonstrated to be Turing-complete in appropriate
-parameter regimes [@Gwozdz2026]. In this paper we extend the standard
-Kuramoto coupling with a CNOT-gate inspired term
-$W_{ij}\cos(\varphi_j)\sin(\varphi_j-\varphi_i)$, which is asymmetric in
-$i$–$j$ and provides a learnable gating of the interaction strength by
-the phase of the "control" oscillator $j$.
+states).
+
+In prior work (Gwóźdź 2026a), we showed that a modified coupling of the
+form $K\cos(\varphi_c)\sin(\varphi_t - \varphi_\text{out})$ implements a
+classical CNOT (controlled-NOT) logic gate via pure oscillator dynamics:
+when the control phase $\varphi_c \approx 0$, $\cos(\varphi_c) \approx +1$
+and the output synchronises with the target; when $\varphi_c \approx \pi$,
+$\cos(\varphi_c) \approx -1$ and the output anti-synchronises (flips the
+target bit). This sign-modulated injection locking achieves 100% gate
+accuracy under noise amplitudes up to $a=1.0$ across 20 random seeds,
+and together with NOT and AND gates (also implemented as oscillator ODEs)
+yields a functionally complete gate set. With bistable D-latch memory,
+the system is Turing-complete under standard unbounded-memory assumptions
+(Gwóźdź 2026a, §4 and Formal Appendix).
+
+In AlphaDynamics we generalise this coupling to a learnable pairwise
+interaction: $W_{ij}\cos(\varphi_j)\sin(\varphi_j - \varphi_i)$, where
+$W$ is an asymmetric $M \times M$ weight matrix. Each entry $W_{ij}$ can
+be interpreted as the strength of a gated interaction from oscillator $j$
+to oscillator $i$—the same sign-modulation mechanism as the CNOT gate,
+but with learned coupling strengths adapted to the dynamical structure of
+the protein. The $\cos(\varphi_j)$ factor acts as a gain modulator:
+oscillator $j$ exerts maximal influence when its phase is near $0$ or
+$\pi$ (the two logical states) and minimal influence at $\pm\pi/2$.
 
 ## 2.3 Mixture of von Mises densities
 
@@ -157,14 +195,10 @@ The phases then evolve under the ordinary differential equation
 $$\frac{d\theta_k}{dt} = \omega_k + \sum_{j=1}^{M} W_{kj}\,\cos(\theta_j)\,\sin(\theta_j-\theta_k) + a\,\sin(\alpha_k-\theta_k),$$
 
 integrated from $t=0$ to $t=t_\text{max}$ with a fourth-order Runge–Kutta
-adjoint scheme [@Chen2018NeuralODE]. The natural frequencies $\omega_k$
-are cycled through the scaled primes $(2.11, 1.31, 0.67, 0.31, 0.17)$
-rad^-1, ensuring mutually incommensurable ratios compatible with the
-Kolmogorov–Arnold–Moser theorem [@Kolmogorov1954]. The anchors
-$\alpha_k=k\cdot 2\pi/\phi^2 \mod 2\pi - \pi$ (with $\phi$ the golden
-ratio) are placed by the Weyl equidistribution theorem
-[@Weyl1916] to break the continuous $\mathbb{S}^1$ symmetry as evenly as
-possible. The coupling matrix $W\in\mathbb{R}^{M\times M}$ is learnable;
+adjoint scheme (Chen et al. 2018). The natural frequencies $\omega_k$ and anchors $\alpha_k$ are
+initialized to break symmetry and avoid resonances; ablation (§4.9)
+shows these choices have negligible impact compared to the ODE
+integration itself. The coupling matrix $W\in\mathbb{R}^{M\times M}$ is learnable;
 the anchor amplitude $a$ and the scaling of $\omega_k$ are learnable
 scalars.
 
@@ -185,7 +219,7 @@ torsion angle $i$. We use $K=8$.
 Given pairs of consecutive frames $(x_t, x_{t+\Delta t})$ drawn uniformly
 from a trajectory, we minimize the negative log-likelihood
 $-\log p(x_{t+\Delta t}\mid x_t)$ of the target under the predicted mixture.
-We use the AdamW optimizer [@Loshchilov2019] with learning rate
+We use the AdamW optimizer (Loshchilov & Hutter 2019) with learning rate
 $2\times 10^{-3}$, weight decay $10^{-4}$, cosine schedule, and 4000
 gradient steps with batch size 512. Each domain is trained independently
 (no multi-domain fine-tuning).
@@ -211,35 +245,44 @@ The GAT baseline contains 875K parameters—more than twice AlphaDynamics
 
 ## 4.1 Dataset
 
-We use mdCATH [@Mirarchi2024], which contains 5 398 CATH domains
+We use mdCATH (Mirarchi et al. 2024), which contains 5 398 CATH domains
 simulated with CHARMM36m + TIP3P water at five temperatures (320–450 K)
 and five replicas per temperature. For the main benchmark we select all
 37 domains with exactly 50 residues, and for the scaling study 20
 randomly chosen domains with exactly 100 residues. We always use the
 348 K temperature (single-replica aggregation of all five replicas for
 statistics). Trajectories are converted to $\varphi,\psi$ angles via
-mdtraj [@McGibbon2015] using the topology embedded in the HDF5 file
+mdtraj (McGibbon et al. 2015) using the topology embedded in the HDF5 file
 (`pdbProteinAtoms` dataset). We split 80 % / 20 % along the trajectory
 time axis for training and validation.
 
 ## 4.2 Main benchmark results
 
-| Size ($N_\text{res}$) | Domains | AlphaDynamics wins | Mean ratio | Best ratio |
-|---|---|---|---|---|
-| 50 | 37 | **37/37** | 5.4× | 11.2× (1lwjA03) |
-| 100 | 20 | **20/20** | 6.3× | 21.7× (5cmbA02) |
-| **Combined** | **57** | **57/57 (100%)** | — | — |
+**Table 1.** Summary statistics across the two size regimes. "AD wins vs
+MLP" counts domains where AlphaDynamics NLL < MLP NLL. "Mean identity"
+is the mean per-frame angular change in degrees—the error of a trivial
+predictor that copies the current frame as its prediction.
 
-The probability that AlphaDynamics wins all 57 domains under a null of
-equal performance is $2^{-57}\approx 7\times 10^{-18}$; the result is
-overwhelmingly significant.
+| Size ($N_\text{res}$) | Domains | Mean identity (°) | Mean MLP NLL | Mean AD NLL | AD wins vs MLP | Mean ratio |
+|---|---|---|---|---|---|---|
+| 50 | 37 | 34.7 | 580.0 | 108.0 | **37/37** | 6.4× |
+| 100 | 20 | 26.3 | 686.9 | 109.3 | **20/20** | 7.5× |
+| **Combined** | **57** | — | — | — | **57/57** | — |
+
+We include the identity baseline (predicting zero change) to
+contextualise the difficulty of each domain: lower identity values
+indicate more ordered proteins with smaller per-step conformational
+changes. Note that the identity predictor and the probabilistic models
+(MLP, AlphaDynamics) are not directly NLL-comparable because the identity
+predictor is deterministic; the identity column serves as a descriptor
+of domain difficulty, not as a competing model.
 
 Figure 1 visualizes the per-domain NLL pairs: every point lies below the
-parity diagonal, and most lie below the 5× line. Figure 3 shows that MLP
-performance degrades substantially from $N_\text{res}=50$ to $N_\text{res}=100$
-(median NLL 387 → 570), whereas AlphaDynamics is nearly flat (median
-104 → 102), indicating that phase coupling is more chain-length-efficient
-than feed-forward processing of joint torsion features.
+parity diagonal. Figure 3 shows that MLP performance degrades
+substantially from $N_\text{res}=50$ to $N_\text{res}=100$ (mean NLL
+580 → 687), whereas AlphaDynamics is nearly flat (108 → 109), indicating
+that phase coupling scales more efficiently with chain length than
+feed-forward processing of joint torsion features.
 
 ## 4.3 Cross-temperature generalization
 
@@ -251,17 +294,17 @@ combinations (Table 2). Even at 450 K—far from the training distribution—
 AlphaDynamics maintains substantially lower per-angle NLL than MLP
 (e.g. 0.70 vs 3.29 on 1kwgA03).
 
-## 4.4 Empirical laws
+## 4.4 Empirical observations
 
-**Law 1 — warmup scaling.** We swept $t_\text{max}\in\{1,2,4,8\}$ on
+**Observation 1 — warmup scaling.** We swept $t_\text{max}\in\{1,2,4,8\}$ on
 four pilot 50-residue domains and found $t_\text{max}=4$ to be optimal
 in every case. Exploratory runs on longer-time-gap data (e.g. 19.2 ns
-jumps from the Timewarp tetrapeptide dataset [@Klein2023Timewarp])
+jumps from the Timewarp tetrapeptide dataset (Klein et al. 2023))
 showed that the optimum shifts to smaller $t_\text{max}$ when the data
 are drawn from enhanced-sampling protocols with shorter effective
 temporal correlations.
 
-**Law 2 — order-dependent advantage.** The ratio
+**Observation 2 — order-dependent advantage.** The ratio
 $\mathrm{NLL}_\text{MLP}/\mathrm{NLL}_\text{AlphaDynamics}$ is inversely
 correlated with the identity baseline of the domain (the per-frame
 conformational change): on the most ordered 50-residue domain
@@ -325,37 +368,56 @@ axis-independent head (mean KL 4.18 vs 2.04). We conclude that the
 through component placement, and explicit cross-terms add noise without
 benefit at this training scale.
 
-## 4.9 Computational cost
+
+## 4.9 Component ablation
+
+To identify which elements contribute most, we tested five variants on
+5 domains: the full model, random frequencies (instead of structured),
+no anchor term, standard Kuramoto coupling (without asymmetric gating),
+and no ODE (MLP on lifted phases). ODE integration is the dominant
+contributor: removing it degrades NLL by 654 nats on average (10×
+worse). The remaining components (frequency initialization, anchor,
+coupling form) have negligible average impact (|ΔNLL| < 1.5), confirming
+that the model's strength lies in the continuous dynamical system prior
+on the torus, not in any particular parameterization of the ODE
+right-hand side (Figure 8).
+
+## 4.10 Computational cost
 
 On a single NVIDIA RTX-5090, AlphaDynamics generates one predicted frame
 (a one-nanosecond step) in $\approx 16$ ms including the adjoint
-integration. Comparable vacuum OpenMM simulation of alanine dipeptide
-takes $\approx 340$ s per nanosecond on the same hardware—a speed-up of
-$2\times 10^3$×. In batched sampling (1000 independent trajectories),
-the effective speed-up exceeds $10^6$×.
+integration. For reference, vacuum OpenMM simulation of alanine dipeptide
+takes $\approx 340$ s per nanosecond on the same hardware. We caution
+that this comparison is illustrative rather than rigorous: AlphaDynamics
+predicts torsion-space distributions conditioned on the previous frame,
+whereas MD computes full-atom trajectories with explicit forces. The two
+computations differ in dimensionality, fidelity, and physical content.
+Per-domain training time is under 10 minutes.
 
 # 5. Discussion
 
-**Positioning.** AlphaDynamics occupies a distinct niche among neural
-surrogates for protein dynamics. Equilibrium samplers such as bioEmu
-[@Lewis2024] and AlphaFlow [@Jing2024AlphaFlow] generate static
-ensembles from sequence; they excel at enumerating metastable states
-but do not provide kinetic information. AlphaFold-subsampling approaches
-[@WaymentSteele2024] share the same limitation. AlphaDynamics, like
-Timewarp [@Klein2023Timewarp] and MDGen [@Jing2024MDGen], is a
-*temporal propagator*: given a conformation it returns a distribution
-over the next-step conformation, enabling the computation of transition
-rates and mean-first-passage times. Unlike Timewarp it operates in
-torsion space rather than Cartesian space, which removes the dimensional
-overhead of explicit-solvent atoms and enables the parameter efficiency
-reported above.
+**Positioning.** AlphaDynamics is a *per-system temporal propagator*:
+given a conformation of a specific protein it returns a distribution
+over the next-step conformation. It shares the propagator paradigm with
+Timewarp (Klein et al. 2023) and MDGen (Jing et al. 2024b), but differs
+in two fundamental respects. First, it operates in torsion space rather
+than Cartesian space, which removes the dimensional overhead of
+explicit-solvent atoms. Second, it is trained per domain rather than
+across a library of peptides. This per-system design limits
+applicability to settings where the target protein is known in advance
+and a short training run is acceptable, but it enables extreme parameter
+efficiency (348K per domain). Transferable surrogates like Timewarp
+address the complementary case where rapid zero-shot prediction across
+many peptides is needed. Equilibrium samplers such as bioEmu
+(Lewis et al. 2024) and AlphaFlow (Jing et al. 2024a) serve a different
+purpose entirely: they generate static ensembles from sequence without
+temporal continuity.
 
 **Why coupled oscillators?** The coupled-oscillator prior is motivated
 by two observations. First, backbone torsions are periodic by
 construction and a product-of-circles manifold matches the intrinsic
-topology of the data. Second, the Kuramoto-style coupling
-$\sin(\theta_j-\theta_k)$ naturally encodes nearest-neighbour
-cooperativity—two residues whose $\varphi,\psi$ angles are mechanically
+topology of the data. Second, the learnable coupling matrix $W$
+naturally encodes pairwise cooperativity—two residues whose $\varphi,\psi$ angles are mechanically
 coupled through the peptide bond behave collectively. Empirically, the
 MLP baseline degrades rapidly as $N_\text{res}$ grows (NLL 580 → 687
 from $N=50$ to $N=100$), whereas AlphaDynamics is nearly flat
@@ -382,8 +444,8 @@ which we leave to follow-up work.
 complementary aspects (point-prediction confidence and distributional
 fidelity) but neither directly measures functionally important
 observables such as transition rates or free-energy differences.
-CASP-style refinement targets [@CASP15] or D.E. Shaw millisecond
-trajectories [@Shaw2010] would permit more biochemically meaningful
+CASP-style refinement targets (Kryshtafovych et al. 2023) or D.E. Shaw millisecond
+trajectories (Shaw et al. 2010) would permit more biochemically meaningful
 evaluation.
 
 **Future work.** The immediate targets are (i) scaling to
@@ -405,17 +467,20 @@ benchmark requires approximately 2 h on a single RTX-5090.
 
 # 7. Conclusion
 
-We have presented AlphaDynamics, a compact (348K-parameter) phase-
-oscillator neural propagator for protein torsion dynamics. On a
+We have presented AlphaDynamics, a compact (348K-parameter) per-system
+phase-oscillator neural propagator for protein torsion dynamics. On a
 57-domain subset of the mdCATH benchmark with a strictly uniform
 simulation protocol, AlphaDynamics outperforms a matched MLP baseline on
 every domain (mean NLL ratio 5.4× at $N_\text{res}=50$, 6.3× at
-$N_\text{res}=100$), preserves long-rollout structure without explosion,
-and predicts one nanosecond of trajectory in $\approx 16$ ms. The
-architecture—CNOT-coupled phase oscillators on the torus—is
-demonstrably more parameter-efficient than large Cartesian normalizing
-flows and leaves the extension to larger proteins and to cross-method
-comparison as immediate next steps.
+$N_\text{res}=100$) and preserves long-rollout structure without
+explosion, though rollout distributional fidelity remains an open
+challenge. The architecture—coupled phase oscillators on the torus,
+evolved via a learnable ODE inspired by the Kuramoto model and
+phase-gate computing (Gwóźdź 2026a)—demonstrates that torus-native
+inductive bias yields strong per-system surrogates with minimal
+parameter budgets. Whether this per-system approach can be extended to
+transferable models that generalise across protein families is an open
+and important question for future work.
 
 # Figures
 
@@ -423,7 +488,7 @@ comparison as immediate next steps.
 Circles: N=50 domains; triangles: N=100 domains. All 57 points lie below
 the parity diagonal; most lie below the 5× line.](figures/fig1_scatter.png){width=85%}
 
-![Figure 2 — Law 2: win ratio $\mathrm{NLL_{MLP}/NLL_{AlphaDynamics}}$
+![Figure 2 — Observation 2: win ratio $\mathrm{NLL_{MLP}/NLL_{AlphaDynamics}}$
 versus per-domain identity baseline. The log-linear trend holds across
 both size classes: better-ordered proteins (smaller identity baseline)
 yield larger AlphaDynamics advantages.](figures/fig2_ratio_vs_identity.png){width=85%}
@@ -442,7 +507,7 @@ re-scaling.](figures/fig4_rollout.png){width=95%}
 
 ![Figure 5 — AlphaDynamics architecture. Input torsions are lifted to M
 oscillator phases, evolved by a CNOT-coupled phase-flow ODE with
-prime-ratio frequencies and golden-phyllotaxis anchors, and read out as
+learnable frequencies and anchors, and read out as
 a K-component mixture of axis-independent von Mises densities on the
 torus.](figures/fig5_architecture.png){width=95%}
 
@@ -450,6 +515,10 @@ torus.](figures/fig5_architecture.png){width=95%}
 (875K params), and AlphaDynamics (348K params) on 5 domains at 348 K.
 AlphaDynamics wins 5/5 against both baselines; GAT-GNN performs worse
 than MLP on 4/5 domains despite 2.3× more parameters.](figures/fig6_gnn_comparison.png){width=85%}
+
+![Figure 8 — Component ablation. Removing ODE integration degrades NLL
+by 654 nats on average (10×). Other components (frequency initialization,
+anchor, coupling form) have negligible impact.](figures/fig8_ablation.png){width=95%}
 
 ![Figure 7 — Ramachandran free-energy maps. Per-residue $G(\varphi,\psi)$
 from 2500-step AlphaDynamics rollouts (left) vs ground-truth MD (right)
@@ -463,4 +532,25 @@ The author thanks the mdCATH team (Mirarchi et al.) for making their dataset pub
 
 # References
 
-[Generated from references.bib via pandoc-citeproc; see paper/references.bib]
+1. Abramson, J. et al. (2024). Accurate structure prediction of biomolecular interactions with AlphaFold 3. *Nature* 630, 493–500.
+2. Chen, R.T.Q. et al. (2018). Neural Ordinary Differential Equations. *NeurIPS*.
+3. Gwóźdź, K. (2026a). Dense Associative Memory on S¹: Phase-Gate Computing and Superlinear Capacity in Circular Oscillator Networks. *Zenodo preprint*. doi:10.5281/zenodo.18800182.
+3b. Gwóźdź, K. (2026b). Theory of Directional Associative Memories: Dense Hopfield Networks on the Unit Sphere S². *Zenodo preprint*. doi:10.5281/zenodo.19230766.
+4. Hollingsworth, S.A. & Dror, R.O. (2018). Molecular dynamics simulation for all. *Neuron* 99(6), 1129–1143.
+5. Jing, B. et al. (2024a). AlphaFold meets flow matching for generating protein ensembles. *ICML*.
+6. Jing, B. et al. (2024b). Generative modeling of molecular dynamics trajectories. *NeurIPS*.
+7. Jumper, J. et al. (2021). Highly accurate protein structure prediction with AlphaFold. *Nature* 596, 583–589.
+8. Klein, L. et al. (2023). Timewarp: Transferable acceleration of molecular dynamics by learning time-coarsened dynamics. *NeurIPS*.
+9. Kryshtafovych, A. et al. (2023). Critical Assessment of Structure Prediction round 15 (CASP15).
+10. Kuramoto, Y. (1984). *Chemical Oscillations, Waves, and Turbulence*. Springer.
+11. Lewis, S. et al. (2024). Scalable emulation of protein equilibrium ensembles with generative deep learning. *bioRxiv / Nature Methods 2025*.
+12. Lindorff-Larsen, K. et al. (2011). How fast-folding proteins fold. *Science* 334(6055), 517–520.
+13. Loshchilov, I. & Hutter, F. (2019). Decoupled weight decay regularization. *ICLR*.
+14. McGibbon, R.T. et al. (2015). MDTraj: a modern open library for the analysis of molecular dynamics trajectories. *Biophysical Journal* 109(8), 1528–1532.
+15. Mirarchi, A. et al. (2024). mdCATH: A Large-Scale MD Dataset for Data-Driven Computational Biophysics. *Scientific Data* 11, 1299.
+16. Muscinelli, S.P. et al. (2024). Oscillators as universal computers.
+17. Sala, D. et al. (2024). Modeling conformational ensembles by guiding AlphaFold2 with DEER distance distributions. *Nature Communications*.
+18. Shaw, D.E. et al. (2010). Atomic-level characterization of the structural dynamics of proteins. *Science* 330(6002), 341–346.
+19. Strogatz, S.H. (2000). From Kuramoto to Crawford. *Physica D* 143(1-4), 1–20.
+20. Wayment-Steele, H.K. et al. (2024). Predicting multiple conformations via sequence clustering and AlphaFold2. *Nature* 625, 832–839.
+21. Weyl, H. (1916). Über die Gleichverteilung von Zahlen mod. Eins. *Math. Annalen* 77(3), 313–352.
