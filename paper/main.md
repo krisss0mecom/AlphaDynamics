@@ -22,7 +22,7 @@ $N_\text{res}=50$ and 20 domains at $N_\text{res}=100$) under an
 identical simulation protocol (CHARMM36m + TIP3P water at 348 K, five
 replicas per domain), AlphaDynamics outperforms a matched
 multilayer-perceptron baseline on every domain, with a mean NLL advantage
-of 5.4× at $N_\text{res}=50$ growing to 6.3× at $N_\text{res}=100$.
+of 6.4× at $N_\text{res}=50$ growing to 7.5× at $N_\text{res}=100$.
 A 2500-step autoregressive rollout test shows that predicted trajectories
 remain stable without exponential blow-up, though rollout fidelity
 requires a concentration-rescaling heuristic ($\kappa \to 30\kappa$)
@@ -296,13 +296,15 @@ AlphaDynamics maintains substantially lower per-angle NLL than MLP
 
 ## 4.4 Empirical observations
 
-**Observation 1 — warmup scaling.** We swept $t_\text{max}\in\{1,2,4,8\}$ on
-four pilot 50-residue domains and found $t_\text{max}=4$ to be optimal
-in every case. Exploratory runs on longer-time-gap data (e.g. 19.2 ns
-jumps from the Timewarp tetrapeptide dataset (Klein et al. 2023))
-showed that the optimum shifts to smaller $t_\text{max}$ when the data
-are drawn from enhanced-sampling protocols with shorter effective
-temporal correlations.
+**Observation 1 — warmup scaling (pilot, n=4 domains).** We swept
+$t_\text{max}\in\{1,2,4,8\}$ on four pilot 50-residue domains and found
+$t_\text{max}=4$ to be optimal in every case. Exploratory runs on
+longer-time-gap data (e.g. 19.2 ns jumps from the Timewarp tetrapeptide
+dataset (Klein et al. 2023)) showed that the optimum shifts to smaller
+$t_\text{max}$ when the data are drawn from enhanced-sampling protocols
+with shorter effective temporal correlations. We stress that this
+observation is based on a small pilot scan; a systematic sweep across
+all 57 benchmark domains is left to future work.
 
 **Observation 2 — order-dependent advantage.** The ratio
 $\mathrm{NLL}_\text{MLP}/\mathrm{NLL}_\text{AlphaDynamics}$ is inversely
@@ -471,7 +473,7 @@ We have presented AlphaDynamics, a compact (348K-parameter) per-system
 phase-oscillator neural propagator for protein torsion dynamics. On a
 57-domain subset of the mdCATH benchmark with a strictly uniform
 simulation protocol, AlphaDynamics outperforms a matched MLP baseline on
-every domain (mean NLL ratio 5.4× at $N_\text{res}=50$, 6.3× at
+every domain (mean NLL ratio 6.4× at $N_\text{res}=50$, 7.5× at
 $N_\text{res}=100$) and preserves long-rollout structure without
 explosion, though rollout distributional fidelity remains an open
 challenge. The architecture—coupled phase oscillators on the torus,
@@ -535,22 +537,22 @@ The author thanks the mdCATH team (Mirarchi et al.) for making their dataset pub
 1. Abramson, J. et al. (2024). Accurate structure prediction of biomolecular interactions with AlphaFold 3. *Nature* 630, 493–500.
 2. Chen, R.T.Q. et al. (2018). Neural Ordinary Differential Equations. *NeurIPS*.
 3. Gwóźdź, K. (2026a). Dense Associative Memory on S¹: Phase-Gate Computing and Superlinear Capacity in Circular Oscillator Networks. *Zenodo preprint*. doi:10.5281/zenodo.18800182.
-3b. Gwóźdź, K. (2026b). Theory of Directional Associative Memories: Dense Hopfield Networks on the Unit Sphere S². *Zenodo preprint*. doi:10.5281/zenodo.19230766.
-4. Hollingsworth, S.A. & Dror, R.O. (2018). Molecular dynamics simulation for all. *Neuron* 99(6), 1129–1143.
-5. Jing, B. et al. (2024a). AlphaFold meets flow matching for generating protein ensembles. *ICML*.
-6. Jing, B. et al. (2024b). Generative modeling of molecular dynamics trajectories. *NeurIPS*.
-7. Jumper, J. et al. (2021). Highly accurate protein structure prediction with AlphaFold. *Nature* 596, 583–589.
-8. Klein, L. et al. (2023). Timewarp: Transferable acceleration of molecular dynamics by learning time-coarsened dynamics. *NeurIPS*.
-9. Kryshtafovych, A. et al. (2023). Critical Assessment of Structure Prediction round 15 (CASP15).
-10. Kuramoto, Y. (1984). *Chemical Oscillations, Waves, and Turbulence*. Springer.
-11. Lewis, S. et al. (2024). Scalable emulation of protein equilibrium ensembles with generative deep learning. *bioRxiv / Nature Methods 2025*.
-12. Lindorff-Larsen, K. et al. (2011). How fast-folding proteins fold. *Science* 334(6055), 517–520.
-13. Loshchilov, I. & Hutter, F. (2019). Decoupled weight decay regularization. *ICLR*.
-14. McGibbon, R.T. et al. (2015). MDTraj: a modern open library for the analysis of molecular dynamics trajectories. *Biophysical Journal* 109(8), 1528–1532.
-15. Mirarchi, A. et al. (2024). mdCATH: A Large-Scale MD Dataset for Data-Driven Computational Biophysics. *Scientific Data* 11, 1299.
-16. Muscinelli, S.P. et al. (2024). Oscillators as universal computers.
-17. Sala, D. et al. (2024). Modeling conformational ensembles by guiding AlphaFold2 with DEER distance distributions. *Nature Communications*.
-18. Shaw, D.E. et al. (2010). Atomic-level characterization of the structural dynamics of proteins. *Science* 330(6002), 341–346.
-19. Strogatz, S.H. (2000). From Kuramoto to Crawford. *Physica D* 143(1-4), 1–20.
-20. Wayment-Steele, H.K. et al. (2024). Predicting multiple conformations via sequence clustering and AlphaFold2. *Nature* 625, 832–839.
-21. Weyl, H. (1916). Über die Gleichverteilung von Zahlen mod. Eins. *Math. Annalen* 77(3), 313–352.
+4. Gwóźdź, K. (2026b). Theory of Directional Associative Memories: Dense Hopfield Networks on the Unit Sphere S². *Zenodo preprint*. doi:10.5281/zenodo.19230766.
+5. Hollingsworth, S.A. & Dror, R.O. (2018). Molecular dynamics simulation for all. *Neuron* 99(6), 1129–1143.
+6. Jing, B. et al. (2024a). AlphaFold meets flow matching for generating protein ensembles. *ICML*.
+7. Jing, B. et al. (2024b). Generative modeling of molecular dynamics trajectories. *NeurIPS*.
+8. Jumper, J. et al. (2021). Highly accurate protein structure prediction with AlphaFold. *Nature* 596, 583–589.
+9. Klein, L. et al. (2023). Timewarp: Transferable acceleration of molecular dynamics by learning time-coarsened dynamics. *NeurIPS*.
+10. Kryshtafovych, A. et al. (2023). Critical Assessment of Structure Prediction round 15 (CASP15).
+11. Kuramoto, Y. (1984). *Chemical Oscillations, Waves, and Turbulence*. Springer.
+12. Lewis, S. et al. (2024). Scalable emulation of protein equilibrium ensembles with generative deep learning. *bioRxiv / Nature Methods 2025*.
+13. Lindorff-Larsen, K. et al. (2011). How fast-folding proteins fold. *Science* 334(6055), 517–520.
+14. Loshchilov, I. & Hutter, F. (2019). Decoupled weight decay regularization. *ICLR*.
+15. McGibbon, R.T. et al. (2015). MDTraj: a modern open library for the analysis of molecular dynamics trajectories. *Biophysical Journal* 109(8), 1528–1532.
+16. Mirarchi, A. et al. (2024). mdCATH: A Large-Scale MD Dataset for Data-Driven Computational Biophysics. *Scientific Data* 11, 1299.
+17. Muscinelli, S.P. et al. (2024). Oscillators as universal computers.
+18. Sala, D. et al. (2024). Modeling conformational ensembles by guiding AlphaFold2 with DEER distance distributions. *Nature Communications*.
+19. Shaw, D.E. et al. (2010). Atomic-level characterization of the structural dynamics of proteins. *Science* 330(6002), 341–346.
+20. Strogatz, S.H. (2000). From Kuramoto to Crawford. *Physica D* 143(1-4), 1–20.
+21. Wayment-Steele, H.K. et al. (2024). Predicting multiple conformations via sequence clustering and AlphaFold2. *Nature* 625, 832–839.
+22. Weyl, H. (1916). Über die Gleichverteilung von Zahlen mod. Eins. *Math. Annalen* 77(3), 313–352.

@@ -79,7 +79,7 @@ def fig1_scatter():
 
 
 # ============================================================
-# Fig 2 — Win ratio vs identity baseline (Law 2)
+# Fig 2 — Win ratio vs identity baseline (Observation 2)
 # ============================================================
 def fig2_ratio_vs_identity():
     r50, r100 = load_benchmark()
@@ -125,7 +125,7 @@ def fig2_ratio_vs_identity():
     ax.axhline(1, color="gray", lw=0.6, alpha=0.4)
     ax.set_xlabel("Identity baseline (°)  — per-frame conformational change")
     ax.set_ylabel("Win ratio (MLP NLL / AlphaDynamics NLL)")
-    ax.set_title("Law 2 — advantage shrinks as conformational disorder grows")
+    ax.set_title("Observation 2 — advantage shrinks as conformational disorder grows")
     ax.set_yscale("log")
     ax.legend(loc="lower left")
     ax.grid(True, alpha=0.25, which="both")
