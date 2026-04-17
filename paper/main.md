@@ -154,11 +154,8 @@ when the control phase $\varphi_c \approx 0$, $\cos(\varphi_c) \approx +1$
 and the output synchronises with the target; when $\varphi_c \approx \pi$,
 $\cos(\varphi_c) \approx -1$ and the output anti-synchronises (flips the
 target bit). This sign-modulated injection locking achieves 100% gate
-accuracy under noise amplitudes up to $a=1.0$ across 20 random seeds,
-and together with NOT and AND gates (also implemented as oscillator ODEs)
-yields a functionally complete gate set. With bistable D-latch memory,
-the system is Turing-complete under standard unbounded-memory assumptions
-(Gwóźdź 2026a, §4 and Formal Appendix).
+accuracy under noise amplitudes up to $a=1.0$ across 20 random seeds
+(Gwóźdź 2026a).
 
 In AlphaDynamics we generalise this coupling to a learnable pairwise
 interaction: $W_{ij}\cos(\varphi_j)\sin(\varphi_j - \varphi_i)$, where
@@ -186,7 +183,7 @@ The full pipeline is summarized in Figure 5.
 ## 3.1 Phase-flow encoder
 
 Given an input conformation $(\boldsymbol\varphi,\boldsymbol\psi)\in\mathbb{T}^{2N_\text{res}}$
-we lift to $M$ oscillator phases $\{\theta_k\}_{k=1}^M$ by an affine map
+we lift to $M=64$ oscillator phases $\{\theta_k\}_{k=1}^M$ by an affine map
 
 $$\theta_k^{(0)} = w^\varphi_k \cdot \boldsymbol\varphi + w^\psi_k \cdot \boldsymbol\psi + b_k.$$
 
@@ -194,7 +191,7 @@ The phases then evolve under the ordinary differential equation
 
 $$\frac{d\theta_k}{dt} = \omega_k + \sum_{j=1}^{M} W_{kj}\,\cos(\theta_j)\,\sin(\theta_j-\theta_k) + a\,\sin(\alpha_k-\theta_k),$$
 
-integrated from $t=0$ to $t=t_\text{max}$ with a fourth-order Runge–Kutta
+integrated from $t=0$ to $t_\text{max}=4.0$ with a fourth-order Runge–Kutta
 adjoint scheme (Chen et al. 2018). The natural frequencies $\omega_k$ and anchors $\alpha_k$ are
 initialized to break symmetry and avoid resonances; ablation (§4.9)
 shows these choices have negligible impact compared to the ODE
@@ -222,7 +219,12 @@ $-\log p(x_{t+\Delta t}\mid x_t)$ of the target under the predicted mixture.
 We use the AdamW optimizer (Loshchilov & Hutter 2019) with learning rate
 $2\times 10^{-3}$, weight decay $10^{-4}$, cosine schedule, and 4000
 gradient steps with batch size 512. Each domain is trained independently
-(no multi-domain fine-tuning).
+(no multi-domain fine-tuning). All experiments use a single random seed
+(42); we report single-run results. The time stride $\Delta t$ between
+consecutive frames corresponds to the mdCATH trajectory save interval
+(approximately 1 ns). The number of oscillators is $M=64$ and ODE
+integration horizon $t_\text{max}=4.0$ for all experiments unless
+otherwise noted.
 
 ## 3.4 Baseline
 
@@ -239,7 +241,7 @@ implemented with torch-geometric GATConv layers. The graph is a linear
 chain (residue $i$ connects to $i\pm 1$), with 3 GAT layers, 4 attention
 heads, node dimension 64, and the same MDN output head as AlphaDynamics.
 The GAT baseline contains 875K parameters—more than twice AlphaDynamics
-(342K)—giving it a capacity advantage.
+(348K)—giving it a capacity advantage.
 
 # 4. Experiments
 
@@ -294,6 +296,19 @@ combinations (Table 2). Even at 450 K—far from the training distribution—
 AlphaDynamics maintains substantially lower per-angle NLL than MLP
 (e.g. 0.70 vs 3.29 on 1kwgA03).
 
+**Table 2.** Cross-temperature generalization. Per-angle NLL for models
+trained at 348 K only, evaluated at all five mdCATH temperatures.
+
+| Domain | 320 K (MLP/AD) | 348 K | 379 K | 413 K | 450 K |
+|--------|---------------|-------|-------|-------|-------|
+| 1hw7A02 | 3.76 / 0.87 | 4.13 / 1.09 | 7.59 / 1.35 | 7.96 / 1.47 | 9.53 / 1.59 |
+| 1kwgA03 | 3.10 / 1.10 | 1.19 / 0.23 | 1.70 / 0.57 | 2.42 / 0.57 | 3.29 / 0.70 |
+| 1lwjA03 | 1.98 / 0.90 | 1.28 / 0.33 | 1.21 / 0.39 | 2.00 / 0.58 | 26.71 / 7.23 |
+| 1ss3A00 | 2.36 / 0.75 | 1.69 / 0.67 | 3.07 / 0.82 | 8.87 / 2.14 | 14.94 / 3.19 |
+| 1vq8L01 | 2.61 / 1.45 | 3.01 / 1.47 | 4.90 / 1.51 | 4.22 / 1.56 | 4.53 / 1.56 |
+
+AlphaDynamics wins 25/25 domain-temperature combinations.
+
 ## 4.4 Empirical observations
 
 **Observation 1 — warmup scaling (pilot, n=4 domains).** We swept
@@ -337,7 +352,7 @@ basin-center $|\Delta G|$, and basin population error. On the two most
 ordered domains (1lwjA03, 1kwgA03), JSD averages 0.148 (good; <0.1 is
 excellent) and $|\Delta G|$ averages 1.0 kcal/mol (thermal $k_BT$ scale).
 The most disordered domain (1vq8L01) shows higher JSD (0.335) due to
-the $\kappa$-rescaling artifact discussed in §5. Figure 7 shows
+the $\kappa$-rescaling artifact discussed in §5. Figure 8 shows
 representative Ramachandran free-energy maps.
 
 ## 4.7 GNN baseline comparison
@@ -363,7 +378,7 @@ than the nearest-neighbor GATConv.
 
 We tested whether modeling $\varphi$–$\psi$ correlations explicitly
 within each mixture component (bivariate von Mises with cross-concentration
-$\kappa_c$; Singh et al. 2002) improves rollout fidelity. On all 5 test
+$\kappa_c$) improves rollout fidelity. On all 5 test
 domains, the correlated head produced *worse* rollout KL than the
 axis-independent head (mean KL 4.18 vs 2.04). We conclude that the
 8-component mixture implicitly captures $\varphi$–$\psi$ correlations
@@ -382,7 +397,7 @@ worse). The remaining components (frequency initialization, anchor,
 coupling form) have negligible average impact (|ΔNLL| < 1.5), confirming
 that the model's strength lies in the continuous dynamical system prior
 on the torus, not in any particular parameterization of the ODE
-right-hand side (Figure 8).
+right-hand side (Figure 7).
 
 ## 4.10 Computational cost
 
@@ -518,15 +533,15 @@ torus.](figures/fig5_architecture.png){width=95%}
 AlphaDynamics wins 5/5 against both baselines; GAT-GNN performs worse
 than MLP on 4/5 domains despite 2.3× more parameters.](figures/fig6_gnn_comparison.png){width=85%}
 
-![Figure 8 — Component ablation. Removing ODE integration degrades NLL
-by 654 nats on average (10×). Other components (frequency initialization,
-anchor, coupling form) have negligible impact.](figures/fig8_ablation.png){width=95%}
-
 ![Figure 7 — Ramachandran free-energy maps. Per-residue $G(\varphi,\psi)$
 from 2500-step AlphaDynamics rollouts (left) vs ground-truth MD (right)
 for representative residues of 1lwjA03 and 1kwgA03. Basin locations and
 depths are well reproduced; the main discrepancy is slight over-concentration
 from the $\kappa$-rescaling heuristic.](figures/ramachandran_1lwjA03.png){width=95%}
+
+![Figure 8 — Component ablation. Removing ODE integration degrades NLL
+by 654 nats on average (10×). Other components (frequency initialization,
+anchor, coupling form) have negligible impact.](figures/fig8_ablation.png){width=95%}
 
 # Acknowledgements
 
@@ -555,4 +570,3 @@ The author thanks the mdCATH team (Mirarchi et al.) for making their dataset pub
 19. Shaw, D.E. et al. (2010). Atomic-level characterization of the structural dynamics of proteins. *Science* 330(6002), 341–346.
 20. Strogatz, S.H. (2000). From Kuramoto to Crawford. *Physica D* 143(1-4), 1–20.
 21. Wayment-Steele, H.K. et al. (2024). Predicting multiple conformations via sequence clustering and AlphaFold2. *Nature* 625, 832–839.
-22. Weyl, H. (1916). Über die Gleichverteilung von Zahlen mod. Eins. *Math. Annalen* 77(3), 313–352.
