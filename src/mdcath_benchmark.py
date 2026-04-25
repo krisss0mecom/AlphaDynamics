@@ -1,8 +1,15 @@
-"""Run AlphaDynamics + MLP on all converted mdCATH domains.
-Unified benchmark: same protocol, same training, same evaluation.
+"""Run AlphaDynamics + MLP on converted mdCATH domains.
+
+The default path points to freshly aligned 348 K phi/psi pairs. Use
+``--out_prefix`` for audit runs so partial reruns do not overwrite the
+historical 37-domain tables.
 """
+import argparse
 import sys
-sys.path.insert(0, "/root/fizyka_bialek_claude/chain")
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 
 import os, glob, math, time, json
 import numpy as np
@@ -49,14 +56,43 @@ def train_model(model, train_flat, val_flat, device, steps=4000, batch=512, lr=2
 
 
 def main():
-    device = torch.device("cuda")
-    DATA_DIR = "/root/fizyka_bialek_claude/chain/real_data/mdcath"
-    files = sorted(glob.glob(f"{DATA_DIR}/*_dihedrals.npz"))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data_dir", default=str(ROOT / "mdcath_real_data" / "mdcath_348K"))
+    parser.add_argument("--results_dir", default=str(ROOT / "results"))
+    parser.add_argument("--out_prefix", default="mdcath_benchmark_results")
+    parser.add_argument("--steps", type=int, default=4000)
+    parser.add_argument("--batch", type=int, default=512)
+    parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
+    parser.add_argument("--max_domains", type=int, default=0,
+                        help="Limit number of domains for smoke/audit runs; 0 means all")
+    parser.add_argument("--allow_legacy_npz", action="store_true",
+                        help="Allow npz files without dihedral_alignment metadata")
+    args = parser.parse_args()
+
+    if args.device == "auto":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(args.device)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA requested but torch.cuda.is_available() is false")
+    DATA_DIR = Path(args.data_dir)
+    RESULTS_DIR = Path(args.results_dir)
+    RESULTS_DIR.mkdir(exist_ok=True)
+    files = sorted(glob.glob(str(DATA_DIR / "*_dihedrals.npz")))
+    if args.max_domains > 0:
+        files = files[:args.max_domains]
     print(f"Found {len(files)} datasets")
 
     all_results = []
     for f in files:
         d = np.load(f)
+        alignment = str(d["dihedral_alignment"]) if "dihedral_alignment" in d else "legacy_or_unknown"
+        if alignment != "common_residue_index" and not args.allow_legacy_npz:
+            raise ValueError(
+                f"{f} lacks common_residue_index alignment metadata. "
+                "Regenerate it with src/mdcath_convert_v3.py --force, or pass "
+                "--allow_legacy_npz for historical-only reruns."
+            )
         domain_id = str(d['domain_id'])
         N = int(d['N'])
         train = torch.tensor(d['train'], dtype=torch.float32, device=device).reshape(d['train'].shape[0], -1)
@@ -72,34 +108,48 @@ def main():
         # MLP baseline
         torch.manual_seed(42)
         model = ChainMLP(N=N, n_components=8, hidden=128).to(device)
-        r = train_model(model, train, val, device, steps=4000, name="MLP")
+        r = train_model(model, train, val, device, steps=args.steps, batch=args.batch, name="MLP")
         print(f"  MLP       NLL={r['nll']:.3f}  mode={r['mode_deg']:.1f}°  best10={r['best10_deg']:.1f}°  ({r['params']:,} p, {r['time_sec']:.0f}s)")
         results_domain["models"]["MLP"] = r
 
         # AlphaDynamics t=1 (safer default for high-entropy data based on our findings)
         torch.manual_seed(42)
         model = ChainPhaseFlowVar(N=N, n_osc=64, n_components=8, hidden=128, t_max=1.0).to(device)
-        r = train_model(model, train, val, device, steps=4000, name="PF_t1")
+        r = train_model(model, train, val, device, steps=args.steps, batch=args.batch, name="PF_t1")
         print(f"  PF t=1    NLL={r['nll']:.3f}  mode={r['mode_deg']:.1f}°  best10={r['best10_deg']:.1f}°  ({r['params']:,} p, {r['time_sec']:.0f}s)")
         results_domain["models"]["PhaseFlow_t1"] = r
 
         # AlphaDynamics t=4 (in case we have structure)
         torch.manual_seed(42)
         model = ChainPhaseFlowVar(N=N, n_osc=64, n_components=8, hidden=128, t_max=4.0).to(device)
-        r = train_model(model, train, val, device, steps=4000, name="PF_t4")
+        r = train_model(model, train, val, device, steps=args.steps, batch=args.batch, name="PF_t4")
         print(f"  PF t=4    NLL={r['nll']:.3f}  mode={r['mode_deg']:.1f}°  best10={r['best10_deg']:.1f}°  ({r['params']:,} p, {r['time_sec']:.0f}s)")
         results_domain["models"]["PhaseFlow_t4"] = r
 
         all_results.append(results_domain)
 
+        # PATCH 2026-04-25: incremental save after each domain
+        # so power-loss/crash doesn't lose all completed results
+        json_path_partial = RESULTS_DIR / f"{args.out_prefix}.json"
+        with open(json_path_partial, 'w') as f:
+            json.dump(all_results, f, indent=2)
+        print(f"  [partial save] {len(all_results)}/{len(files)} domains -> {json_path_partial}")
+
     # Save
-    with open("/root/fizyka_bialek_claude/chain/mdcath_benchmark_results.json", 'w') as f:
+    json_path = RESULTS_DIR / f"{args.out_prefix}.json"
+    md_path = RESULTS_DIR / f"{args.out_prefix}.md"
+    with open(json_path, 'w') as f:
         json.dump(all_results, f, indent=2)
 
     # Markdown report
-    lines = ["# mdCATH unified benchmark — 50-residue domains",
+    lines = ["# mdCATH unified benchmark — aligned 348 K domains",
              "",
-             "Protocol: CHARMM36m + TIP3P water, 348K, 5 replicas × 440 frames = 2240 frames per domain",
+             f"Data directory: `{DATA_DIR}`",
+             "",
+             f"Training steps per model: {args.steps}, batch: {args.batch}",
+             "",
+             "Protocol: CHARMM36m + TIP3P water, 348 K, 5 replicas per domain.",
+             "Phi/psi pairs are aligned by common residue index.",
              "",
              "| Domain | N | Identity° | MLP NLL | PF_t1 NLL | PF_t4 NLL | Best model | ΔNLL (best PF - MLP) |",
              "|---|---|---|---|---|---|---|---|"]
@@ -128,10 +178,12 @@ def main():
               f"- MLP mean NLL: {np.mean(mlp_nlls):.3f}",
               f"- PhaseFlow best mean NLL: {np.mean(pf_best_nlls):.3f}"]
 
-    with open("/root/fizyka_bialek_claude/chain/mdcath_benchmark_results.md", 'w') as f:
+    with open(md_path, 'w') as f:
         f.write("\n".join(lines))
     print("\n\n=== FINAL REPORT ===\n")
     print("\n".join(lines))
+    print(f"\nSaved: {json_path}")
+    print(f"Saved: {md_path}")
 
 
 if __name__ == "__main__":

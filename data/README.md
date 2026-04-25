@@ -1,6 +1,8 @@
 # Data
 
-Raw MD trajectories are not committed (200 MB per file × 37 files = 7.4 GB).
+Raw MD trajectories are not committed. mdCATH HDF5 files are typically on the
+order of hundreds of MB per domain; the full mdCATH corpus is much larger than
+this repository should vendor.
 
 ## mdCATH (primary benchmark source)
 
@@ -30,22 +32,31 @@ Each HDF5 file contains `pdbProteinAtoms` (embedded PDB topology),
 `coords`, `forces`, `box`, `dssp`, `rmsd`, `rmsf`, `gyrationRadius` for
 each temperature × replica.
 
-**50-residue domains used in our benchmark:** 37 domains from the small
-end of mdCATH's size distribution. See `src/mdcath_convert_v3.py` and
-`src/mdcath_benchmark.py` for the domain list.
+**Audited domains used in the v1 manuscript:** 20 aligned N=48 domains and
+20 aligned N=98 domains at 348 K, plus matching all-temperature files for the
+rollout/free-energy audits. The concrete domain IDs are listed in
+`results/mdcath_aligned20_4000step_cpu.md` and
+`results/mdcath_aligned20_n100_4000step_gpu.md`.
 
 ## File format we produce
 
 After `src/mdcath_convert_v3.py`:
 
 ```
-real_data/mdcath/{domain_id}_dihedrals.npz
+mdcath_real_data/mdcath_348K/{domain_id}_dihedrals.npz
   train:       (T_train, N_residues_with_both_phi_psi, 2) float32
   val:         (T_val, N, 2)
   N:           int
   domain_id:   str
   n_residues:  int
   n_atoms:     int
+  residue_indices: int array, common residues used for aligned phi/psi pairs
+  dihedral_alignment: "common_residue_index"
+  source_h5:    source HDF5 path
   mean_step_deg: float
   identity_deg:  float
 ```
+
+`phi` and `psi` are aligned by residue index. Legacy `.npz` files without
+`dihedral_alignment=common_residue_index` should not be used for publication
+benchmarks unless explicitly marked as historical.

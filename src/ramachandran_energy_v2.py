@@ -7,7 +7,12 @@ Replaces flawed |max(G)-max(G)| metric with:
   4. Population fraction accuracy per basin
 """
 import sys, os, math, json, glob
-sys.path.insert(0, '/home/krisss0/AlphaDynamics/src')
+from pathlib import Path
+import argparse
+import time
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 
 import numpy as np
 import torch
@@ -24,10 +29,9 @@ TWO_PI = 2 * math.pi
 kT_RT = 0.596  # kcal/mol at 298K
 def wrap_np(a): return (a + np.pi) % TWO_PI - np.pi
 
-DATA_DIR = "/home/krisss0/AlphaDynamics/mdcath_real_data/mdcath_alltemps"
-RES_DIR = "/home/krisss0/AlphaDynamics/results"
-FIG_DIR = "/home/krisss0/AlphaDynamics/paper/figures"
-os.makedirs(FIG_DIR, exist_ok=True)
+DEFAULT_DATA_DIR = ROOT / "mdcath_real_data" / "mdcath_alltemps"
+DEFAULT_RES_DIR = ROOT / "results"
+DEFAULT_FIG_DIR = ROOT / "paper" / "figures"
 
 DOMAINS = ['1lwjA03', '1vq8L01', '1kwgA03']
 TEMP = 348
@@ -137,13 +141,14 @@ def basin_populations(P, basins, radius_bins=4):
     return fractions
 
 
-def train_model(N, train_data, device, steps=4000, batch=256, lr=2e-3, seed=42):
+def train_model(N, train_data, device, steps=4000, batch=256, lr=2e-3, seed=42, log_every=500):
     torch.manual_seed(seed)
     model = ChainPhaseFlowVar(N=N, n_osc=64, n_components=8, hidden=128, t_max=4.0).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=steps)
     N_train = len(train_data) - 1
     model.train()
+    t0 = time.time()
     for step in range(1, steps + 1):
         idx = torch.randint(0, N_train, (batch,), device=device)
         x, y = train_data[idx], train_data[idx + 1]
@@ -152,6 +157,8 @@ def train_model(N, train_data, device, steps=4000, batch=256, lr=2e-3, seed=42):
         opt.zero_grad(); loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step(); sched.step()
+        if log_every and (step % log_every == 0 or step == steps):
+            print(f"    step {step}/{steps} loss={loss.item():.3f} elapsed={time.time()-t0:.0f}s", flush=True)
     return model
 
 
@@ -167,22 +174,60 @@ def plot_G_comparison(ax, phi, psi, title):
 
 
 def main():
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data_dir", default=str(DEFAULT_DATA_DIR))
+    parser.add_argument("--results_dir", default=str(DEFAULT_RES_DIR))
+    parser.add_argument("--fig_dir", default=str(DEFAULT_FIG_DIR))
+    parser.add_argument("--out_prefix", default="ramachandran_energy")
+    parser.add_argument("--domains", nargs="+", default=DOMAINS)
+    parser.add_argument("--temp", type=int, default=TEMP)
+    parser.add_argument("--steps", type=int, default=4000)
+    parser.add_argument("--batch", type=int, default=256)
+    parser.add_argument("--rollout_steps", type=int, default=N_STEPS_ROLLOUT)
+    parser.add_argument("--kappa_mult", type=float, default=KAPPA_MULT)
+    parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
+    parser.add_argument("--allow_legacy_npz", action="store_true",
+                        help="Allow npz files without dihedral_alignment metadata")
+    args = parser.parse_args()
+
+    if args.device == "auto":
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    else:
+        device = torch.device(args.device)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA requested but torch.cuda.is_available() is false")
+    data_dir = Path(args.data_dir)
+    res_dir = Path(args.results_dir)
+    fig_dir = Path(args.fig_dir)
+    res_dir.mkdir(parents=True, exist_ok=True)
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Device: {device}")
+    print(f"Data directory: {data_dir}")
+    print(f"Domains: {', '.join(args.domains)}")
     all_results = {}
 
-    for domain in DOMAINS:
+    for domain in args.domains:
         print(f"\n=== {domain} ===")
-        d = np.load(f"{DATA_DIR}/{domain}_T{TEMP}_dihedrals.npz")
+        data_file = data_dir / f"{domain}_T{args.temp}_dihedrals.npz"
+        d = np.load(data_file)
+        alignment = str(d["dihedral_alignment"]) if "dihedral_alignment" in d else "legacy_or_unknown"
+        if alignment != "common_residue_index" and not args.allow_legacy_npz:
+            raise ValueError(
+                f"{data_file} lacks common_residue_index alignment metadata. "
+                "Regenerate it with src/mdcath_convert_alltemps.py --force."
+            )
         N = int(d['N'])
         train = torch.tensor(d['train'], dtype=torch.float32, device=device).reshape(d['train'].shape[0], -1)
         val_gt = torch.tensor(d['val'], dtype=torch.float32, device=device).reshape(d['val'].shape[0], -1)
         gt_all = np.concatenate([d['train'], d['val']], axis=0)
 
         print("  Training AlphaDynamics t=4 ...")
-        model = train_model(N, train, device, steps=4000)
+        model = train_model(N, train, device, steps=args.steps, batch=args.batch)
 
-        print(f"  Rollout {N_STEPS_ROLLOUT} steps (κ×{KAPPA_MULT})...")
-        rollout_traj = rollout(model, val_gt[0:1], N_STEPS_ROLLOUT, kappa_mult=KAPPA_MULT).cpu().numpy()
+        print(f"  Rollout {args.rollout_steps} steps (κ×{args.kappa_mult})...")
+        t0 = time.time()
+        rollout_traj = rollout(model, val_gt[0:1], args.rollout_steps, kappa_mult=args.kappa_mult).cpu().numpy()
+        print(f"  Rollout done in {time.time()-t0:.1f}s")
         rollout_np = rollout_traj.reshape(-1, N, 2)
 
         # Per-residue metrics
@@ -223,18 +268,26 @@ def main():
                                      f"GT residue {r}")
             im2 = plot_G_comparison(axes[1, col], rollout_np[:, r, 0], rollout_np[:, r, 1],
                                      f"AlphaDynamics residue {r}  (JSD={jsd_per_res[r]:.3f})")
-        fig.suptitle(f"Ramachandran free energy G(φ,ψ) [kcal/mol, capped display at 8] — {domain} @ {TEMP}K\n"
-                     f"Top: ground truth. Bottom: AlphaDynamics 2500-step rollout",
+        fig.suptitle(f"Ramachandran free energy G(φ,ψ) [kcal/mol, capped display at 8] — {domain} @ {args.temp}K\n"
+                     f"Top: ground truth. Bottom: AlphaDynamics {args.rollout_steps}-step rollout",
                      fontsize=11)
         # Shared colorbar
         cbar = fig.colorbar(im2, ax=axes.ravel().tolist(), orientation='vertical', fraction=0.025, pad=0.02)
         cbar.set_label('G (kcal/mol)')
-        plt.savefig(f"{FIG_DIR}/ramachandran_{domain}.png", dpi=120, bbox_inches='tight')
+        fig_path = fig_dir / f"{args.out_prefix}_{domain}.png"
+        plt.savefig(fig_path, dpi=120, bbox_inches='tight')
         plt.close()
-        print(f"  Saved {FIG_DIR}/ramachandran_{domain}.png")
+        print(f"  Saved {fig_path}")
 
         all_results[domain] = {
             'N': N,
+            'data_file': str(data_file),
+            'dihedral_alignment': alignment,
+            'temp': args.temp,
+            'train_steps': args.steps,
+            'batch': args.batch,
+            'rollout_steps': args.rollout_steps,
+            'kappa_mult': args.kappa_mult,
             'jsd_mean': float(np.mean(jsd_per_res)),
             'jsd_max': float(np.max(jsd_per_res)),
             'emd_mean_deg': float(np.mean(emd_per_res)),
@@ -253,12 +306,19 @@ def main():
         torch.cuda.empty_cache()
 
     # Save
-    with open(f"{RES_DIR}/ramachandran_energy.json", 'w') as f:
+    out_json = res_dir / f"{args.out_prefix}.json"
+    out_md = res_dir / f"{args.out_prefix}.md"
+    with open(out_json, 'w') as f:
         json.dump(all_results, f, indent=2)
 
-    lines = ["# Ramachandran free energy — AlphaDynamics vs ground truth (v2)",
+    lines = ["# Ramachandran free energy — AlphaDynamics aligned rollout vs ground truth",
              "",
-             "2500-step rollouts. Metrics:",
+             f"Data directory: `{data_dir}`",
+             f"Domains: {', '.join(args.domains)}",
+             f"Training: {args.steps} steps, batch {args.batch}, device {device}",
+             f"Rollout: {args.rollout_steps} steps, κ×{args.kappa_mult:g}",
+             "",
+             "Metrics:",
              "- **JSD**: Jensen-Shannon divergence between P(φ,ψ)_model and P_gt (nats). Range [0, ln2≈0.693]. Lower=better.",
              "- **EMD**: avg marginal Wasserstein distance (°). Measures spatial displacement of density. Lower=better.",
              "- **|ΔG_basin|**: avg error on G at GT-basin centers (kcal/mol). <1 = within thermal kT.",
@@ -279,8 +339,8 @@ def main():
               "| \\|ΔG_basin\\| (kcal) | <0.5 | 0.5–1.5 | >2.0 |",
               "| Pop err | <0.05 | 0.05–0.15 | >0.25 |",
               "",
-              "Figures: `paper/figures/ramachandran_{domain}.png`"]
-    with open(f"{RES_DIR}/ramachandran_energy.md", 'w') as f:
+              f"Figures: `paper/figures/{args.out_prefix}_{{domain}}.png`"]
+    with open(out_md, 'w') as f:
         f.write('\n'.join(lines))
     print("\n\n" + '\n'.join(lines))
 

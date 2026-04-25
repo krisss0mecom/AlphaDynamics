@@ -1,7 +1,7 @@
 ---
-title: "AlphaDynamics: Coupled Phase Oscillators for Protein Torsion Dynamics Prediction"
+title: "AlphaDynamics: A compact per-system phase-flow surrogate for protein torsion dynamics"
 author: "Krzysztof Gwóźdź (Independent Researcher, Poland)"
-date: "2026-04-15"
+date: "2026-04-25"
 ---
 
 # Abstract
@@ -16,22 +16,21 @@ axis-independent von Mises densities on $\mathbb{T}^N$ through a shallow
 feed-forward head. Unlike transferable surrogates such as Timewarp
 (Klein et al. 2023), which amortise a single large model across many
 peptides, AlphaDynamics trains a lightweight specialist (348K parameters)
-per protein domain. On a 57-domain subset of the mdCATH benchmark
-(Mirarchi et al. 2024), covering two size regimes (37 domains at
-$N_\text{res}=50$ and 20 domains at $N_\text{res}=100$) under an
-identical simulation protocol (CHARMM36m + TIP3P water at 348 K, five
-replicas per domain), AlphaDynamics outperforms a matched
-multilayer-perceptron baseline on every domain, with a mean NLL advantage
-of 6.4× at $N_\text{res}=50$ growing to 7.5× at $N_\text{res}=100$.
-A 2500-step autoregressive rollout test shows that predicted trajectories
-remain stable without exponential blow-up, though rollout fidelity
-requires a concentration-rescaling heuristic ($\kappa \to 30\kappa$)
-whose replacement remains an open problem. Ablation experiments confirm
-that the ODE integration is the critical architectural component.
-We report two empirical observations: (i) the optimal ODE integration
-horizon $t_\text{max}$ correlates with the temporal correlation length
-of the training data, and (ii) the NLL advantage over the MLP baseline
-is largest for conformationally ordered domains.
+per protein domain. We report a fresh aligned mdCATH audit in which
+$\varphi$ and $\psi$ torsions are paired by common residue index before
+training. Across 40 domains at 348 K (20 domains with $N=48$ common
+residues and 20 domains with $N=98$), AlphaDynamics outperforms a
+matched multilayer-perceptron baseline on every domain. The ratio of
+mean NLLs is 7.66× for $N=48$ and 5.08× for $N=98$. Six 2500-step
+autoregressive rollouts produce stable Ramachandran free-energy maps:
+mean JSD is 0.194 for $N=48$ and 0.172 for $N=98$, with the strongest
+fidelity on conformationally ordered domains and weaker performance on
+high-entropy/disordered domains. Rollout fidelity currently uses a
+concentration-rescaling heuristic ($\kappa \to 30\kappa$), which is
+reported as a limitation rather than a solved thermodynamic guarantee.
+The resulting claim is deliberately scoped: AlphaDynamics is a
+per-system temporal surrogate trained from seed MD, not a zero-shot
+sequence-to-dynamics model.
 
 # 1. Introduction
 
@@ -103,11 +102,12 @@ The contributions of this paper are:
    parameters amortised across peptide families); the two approaches
    address complementary use cases.
 
-2. **Uniform benchmark.** We evaluate on a 57-domain subset of the
-   mdCATH dataset (Mirarchi et al. 2024) under an identical simulation
-   protocol across domains and two size regimes
-   ($N_\text{res}\in\{50,100\}$), comparing against a matched MLP
-   baseline, a per-residue identity predictor, and a GAT-GNN baseline (§4).
+2. **Aligned mdCATH audit.** We evaluate on 40 mdCATH domains under an
+   identical simulation protocol across two aligned size classes
+   ($N\in\{48,98\}$ common residues), comparing against a matched MLP
+   baseline and a per-residue identity descriptor (§4). The audit fixes
+   a phi/psi pairing hazard in earlier conversion scripts by aligning
+   both torsions through residue indices before writing benchmark arrays.
 
 3. **Empirical observations.** We report two trends: the optimal ODE
    integration horizon correlates with the temporal correlation length of
@@ -116,10 +116,10 @@ The contributions of this paper are:
    observations are preliminary and require validation on larger and more
    diverse protein sets.
 
-4. **Rollout stability.** Long (2500-step) autoregressive rollouts do
-   not diverge, though distributional fidelity requires a
+4. **Rollout stability.** Six long (2500-step) autoregressive rollouts
+   do not diverge, though distributional fidelity requires a
    concentration-rescaling heuristic ($\kappa \to 30\kappa$) at sampling
-   time. We report this honestly as a current limitation (§4.5).
+   time. We report this honestly as a current limitation (§4.6).
 
 5. **Inference cost.** On a single GPU, AlphaDynamics generates one
    nanosecond of predicted trajectory in approximately 16 ms per domain.
@@ -218,13 +218,15 @@ from a trajectory, we minimize the negative log-likelihood
 $-\log p(x_{t+\Delta t}\mid x_t)$ of the target under the predicted mixture.
 We use the AdamW optimizer (Loshchilov & Hutter 2019) with learning rate
 $2\times 10^{-3}$, weight decay $10^{-4}$, cosine schedule, and 4000
-gradient steps with batch size 512. Each domain is trained independently
-(no multi-domain fine-tuning). All experiments use a single random seed
-(42); we report single-run results. The time stride $\Delta t$ between
-consecutive frames corresponds to the mdCATH trajectory save interval
-(approximately 1 ns). The number of oscillators is $M=64$ and ODE
-integration horizon $t_\text{max}=4.0$ for all experiments unless
-otherwise noted.
+gradient steps. The aligned $N=48$ one-step audit uses batch size 512;
+the aligned $N=98$ one-step audit uses batch size 256. Rollout audits
+use the batch sizes listed with their tables. Each domain is trained
+independently (no multi-domain fine-tuning). All experiments use a
+single random seed (42); we report single-run results. The time stride
+$\Delta t$ between consecutive frames corresponds to the mdCATH trajectory
+save interval (approximately 1 ns). The number of oscillators is $M=64$
+and ODE integration horizon $t_\text{max}=4.0$ for the publication-grade
+aligned audits.
 
 ## 3.4 Baseline
 
@@ -249,27 +251,39 @@ The GAT baseline contains 875K parameters—more than twice AlphaDynamics
 
 We use mdCATH (Mirarchi et al. 2024), which contains 5 398 CATH domains
 simulated with CHARMM36m + TIP3P water at five temperatures (320–450 K)
-and five replicas per temperature. For the main benchmark we select all
-37 domains with exactly 50 residues, and for the scaling study 20
-randomly chosen domains with exactly 100 residues. We always use the
-348 K temperature (single-replica aggregation of all five replicas for
-statistics). Trajectories are converted to $\varphi,\psi$ angles via
-mdtraj (McGibbon et al. 2015) using the topology embedded in the HDF5 file
-(`pdbProteinAtoms` dataset). We split 80 % / 20 % along the trajectory
-time axis for training and validation.
+and five replicas per temperature. The primary audit uses 40 local
+domains at 348 K: 20 domains from the shorter-chain subset with $N=48$
+common residue-indexed $\varphi,\psi$ pairs, and 20 domains from the
+larger-chain subset with $N=98$ common residue-indexed pairs. The $N$
+values are the number of residues for which both $\varphi$ and $\psi$
+are available after residue-index alignment, not the nominal chain
+length in the raw domain selection.
+
+Trajectories are converted to $\varphi,\psi$ angles via mdtraj
+(McGibbon et al. 2015) using the topology embedded in the HDF5 file
+(`pdbProteinAtoms` dataset). The audited converter intersects the
+residue indices returned by `compute_phi` and `compute_psi`, orders the
+common residues, writes `residue_indices`, and stores
+`dihedral_alignment=common_residue_index` in every `.npz` file. This is
+the data-integrity boundary for the reported audit. Earlier exploratory
+tables generated before this alignment audit are retained only as
+development history, not as headline publication numbers. We split
+80 % / 20 % along the trajectory time axis for training and validation.
 
 ## 4.2 Main benchmark results
 
-**Table 1.** Summary statistics across the two size regimes. "AD wins vs
-MLP" counts domains where AlphaDynamics NLL < MLP NLL. "Mean identity"
-is the mean per-frame angular change in degrees—the error of a trivial
-predictor that copies the current frame as its prediction.
+**Table 1.** Publication-grade aligned audit across the two size regimes.
+"AD wins vs MLP" counts domains where AlphaDynamics NLL < MLP NLL.
+"Mean identity" is the mean per-frame angular change in degrees—the
+error of a trivial predictor that copies the current frame as its
+prediction. "Ratio" is the ratio of mean MLP NLL to mean AlphaDynamics
+NLL.
 
-| Size ($N_\text{res}$) | Domains | Mean identity (°) | Mean MLP NLL | Mean AD NLL | AD wins vs MLP | Mean ratio |
-|---|---|---|---|---|---|---|
-| 50 | 37 | 34.7 | 580.0 | 108.0 | **37/37** | 6.4× |
-| 100 | 20 | 26.3 | 686.9 | 109.3 | **20/20** | 7.5× |
-| **Combined** | **57** | — | — | — | **57/57** | — |
+| Size class | Domains | N used | Batch | Mean identity (°) | Mean MLP NLL | Mean AD NLL | AD wins vs MLP | Ratio |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Short-chain aligned | 20 | 48 | 512 | 34.0 | 871.8 | 113.8 | **20/20** | **7.66×** |
+| Longer-chain aligned | 20 | 98 | 256 | 25.8 | 519.5 | 102.2 | **20/20** | **5.08×** |
+| **Combined aligned audit** | **40** | — | — | — | — | — | **40/40** | — |
 
 We include the identity baseline (predicting zero change) to
 contextualise the difficulty of each domain: lower identity values
@@ -279,16 +293,28 @@ changes. Note that the identity predictor and the probabilistic models
 predictor is deterministic; the identity column serves as a descriptor
 of domain difficulty, not as a competing model.
 
-Figure 1 visualizes the per-domain NLL pairs: every point lies below the
-parity diagonal. Figure 3 shows that MLP performance degrades
-substantially from $N_\text{res}=50$ to $N_\text{res}=100$ (mean NLL
-580 → 687), whereas AlphaDynamics is nearly flat (108 → 109), indicating
-that phase coupling scales more efficiently with chain length than
-feed-forward processing of joint torsion features.
+Figure 1 visualizes the per-domain NLL pairs from the aligned audit:
+every point lies below the parity diagonal. Figure 3 shows that
+AlphaDynamics remains far below the MLP baseline in both aligned size
+classes. The aligned audit does **not** support the earlier exploratory
+claim that the advantage monotonically grows with chain length: the
+ratio-of-means is 7.66× at $N=48$ and 5.08× at $N=98$. The conservative
+scaling claim is therefore that the advantage persists at larger $N$ and
+that rollout fidelity does not visibly degrade (§4.6), not that the NLL
+ratio must increase with chain length.
 
-## 4.3 Cross-temperature generalization
+For the $N=48$ subset, PF with $t_\text{max}=4$ is the best
+AlphaDynamics variant on all 20 domains; per-domain win ratios range
+from 3.90× (`1vq8L01`) to 21.64× (`1zv8G00`). For the $N=98$ subset,
+PF with $t_\text{max}=4$ is again the best variant on all 20 domains;
+per-domain win ratios range from 3.47× (`2of5H00`) to 9.82×
+(`4ktyB04`). The full aligned tables are in
+`results/mdcath_aligned20_4000step_cpu.md` and
+`results/mdcath_aligned20_n100_4000step_gpu.md`.
 
-To test whether AlphaDynamics generalizes beyond training temperature,
+## 4.3 Auxiliary cross-temperature check
+
+As an auxiliary check, not part of the primary aligned headline claim,
 we trained on 348 K only and evaluated on all five mdCATH temperatures
 (320, 348, 379, 413, 450 K) across 5 representative domains. AlphaDynamics
 achieves a 25/25 win rate against MLP across all domain-temperature
@@ -319,41 +345,60 @@ dataset (Klein et al. 2023)) showed that the optimum shifts to smaller
 $t_\text{max}$ when the data are drawn from enhanced-sampling protocols
 with shorter effective temporal correlations. We stress that this
 observation is based on a small pilot scan; a systematic sweep across
-all 57 benchmark domains is left to future work.
+the aligned audit domains is left to future work.
 
 **Observation 2 — order-dependent advantage.** The ratio
 $\mathrm{NLL}_\text{MLP}/\mathrm{NLL}_\text{AlphaDynamics}$ is inversely
 correlated with the identity baseline of the domain (the per-frame
-conformational change): on the most ordered 50-residue domain
-(1lwjA03, identity = 25.8°) the ratio is 11.2×, while on the most
-disordered (1vq8L01, identity = 55.0°) it is 3.6×. Phase coupling is
-more beneficial when dynamics have learnable temporal structure.
-Figure 2 shows the log-linear relationship across both size classes.
+conformational change). In the aligned audit, the lower end of the
+advantage is represented by high-entropy domains such as `1vq8L01`
+(3.90× at $N=48$) and `2of5H00` (3.47× at $N=98$), while ordered
+domains can show much larger margins, up to 21.64× (`1zv8G00`) and
+9.82× (`4ktyB04`). Phase coupling is most beneficial when dynamics have
+learnable temporal structure. Figure 2 shows the relationship across
+both aligned size classes.
 
 ## 4.5 Long-rollout stability
 
-We selected five 50-residue domains spanning the full identity range and
-ran a 2500-step autoregressive rollout with concentration re-scaling
-$\kappa\to30\kappa$ at sampling time (chosen empirically; see §5 for
-discussion). Step magnitudes decrease slightly over the rollout (mean
-drift $-32°$ joint, i.e. no exponential divergence). Per-residue
-Ramachandran Kullback–Leibler divergence against the full reference
-distribution averages 1.84, compared to a ground-truth-vs-ground-truth
-KL of $\sim 0.1$. The rollout distribution is qualitatively correct but
-narrower than the reference—consistent with the over-concentration
-caveat in §5. Figure 4 reports both metrics per domain.
+Before the free-energy audit below, we ran a preliminary 2500-step
+autoregressive rollout on five 50-residue domains spanning the identity
+range. With concentration re-scaling $\kappa\to30\kappa$ at sampling time
+(chosen empirically; see §5), step magnitudes decreased slightly over
+the rollout (mean drift $-32°$ joint), i.e. no exponential divergence was
+observed. Per-residue Ramachandran Kullback–Leibler divergence against
+the full reference distribution averaged 1.84, compared to a
+ground-truth-vs-ground-truth KL of $\sim 0.1$. This preliminary test
+establishes rollout stability; the aligned free-energy audit in §4.6 is
+the primary distributional-fidelity result. Figure 4 reports the
+preliminary stability metrics per domain.
 
 ## 4.6 Ramachandran free-energy fidelity
 
 We computed per-residue free-energy surfaces $G(\varphi,\psi) = -RT\ln P$
 from 2500-step rollouts and compared to ground truth via four metrics:
 Jensen–Shannon divergence (JSD), marginal Wasserstein distance (EMD),
-basin-center $|\Delta G|$, and basin population error. On the two most
-ordered domains (1lwjA03, 1kwgA03), JSD averages 0.148 (good; <0.1 is
-excellent) and $|\Delta G|$ averages 1.0 kcal/mol (thermal $k_BT$ scale).
-The most disordered domain (1vq8L01) shows higher JSD (0.335) due to
-the $\kappa$-rescaling artifact discussed in §5. Figure 8 shows
-representative Ramachandran free-energy maps.
+basin-center $|\Delta G|$, and basin population error. The aligned
+rollout audit covers three $N=48$ domains and three $N=98$ domains,
+with one high-entropy/disordered exemplar in each size class.
+
+| Audit | Domains | Training | Rollout | Mean JSD | Mean EMD | Mean $|\Delta G_\text{basin}|$ | Mean pop err |
+|---|---:|---|---|---:|---:|---:|---:|
+| N=48 aligned | 3 | 4000 steps, CUDA, batch 512 | 2500 steps, $\kappa\times30$ | 0.194 | 20.6° | 1.356 kcal/mol | 0.093 |
+| N=98 aligned | 3 | 4000 steps, CUDA, batch 128 | 2500 steps, $\kappa\times30$ | 0.172 | 17.9° | 1.403 kcal/mol | 0.092 |
+
+The ordered $N=48$ domains are strong: `1lwjA03` has JSD 0.143,
+EMD 11.9°, $|\Delta G_\text{basin}|$ 0.956 kcal/mol, and population
+error 0.067; `1kwgA03` has JSD 0.138, EMD 13.9°,
+$|\Delta G_\text{basin}|$ 1.136 kcal/mol, and population error 0.070.
+The disordered $N=48$ domain `1vq8L01` is weaker (JSD 0.300,
+EMD 35.9°, $|\Delta G_\text{basin}|$ 1.977 kcal/mol, population error
+0.141). The same pattern holds at $N=98$: ordered domains `4ktyB04`
+and `1w36F02` have JSD 0.127 and 0.122, while disordered `2hoxA01`
+has JSD 0.266 and $|\Delta G_\text{basin}|$ 2.186 kcal/mol. Mean JSD is
+marginally lower at $N=98$ than at $N=48$, so rollout fidelity does not
+visibly degrade with chain length on aligned data. The full aligned
+tables are in `results/ramachandran_aligned3_4000step_gpu.md` and
+`results/ramachandran_aligned3_n98_4000step_gpu.md`.
 
 ## 4.7 GNN baseline comparison
 
@@ -397,7 +442,7 @@ worse). The remaining components (frequency initialization, anchor,
 coupling form) have negligible average impact (|ΔNLL| < 1.5), confirming
 that the model's strength lies in the continuous dynamical system prior
 on the torus, not in any particular parameterization of the ODE
-right-hand side (Figure 7).
+right-hand side (Figure 8).
 
 ## 4.10 Computational cost
 
@@ -436,12 +481,23 @@ construction and a product-of-circles manifold matches the intrinsic
 topology of the data. Second, the learnable coupling matrix $W$
 naturally encodes pairwise cooperativity—two residues whose $\varphi,\psi$ angles are mechanically
 coupled through the peptide bond behave collectively. Empirically, the
-MLP baseline degrades rapidly as $N_\text{res}$ grows (NLL 580 → 687
-from $N=50$ to $N=100$), whereas AlphaDynamics is nearly flat
-(108 → 109). The peptide-bond inductive bias pays dividends at chain
-scale.
+aligned audit shows a consistent margin over the MLP baseline in both
+size regimes: 7.66× by ratio-of-means at $N=48$ and 5.08× at $N=98$.
+The older exploratory trend that the ratio grows monotonically with
+chain length is not supported after the residue-index alignment audit.
+The defensible interpretation is narrower and stronger: the torus-native
+phase-flow prior remains effective at the larger aligned size class, and
+rollout free-energy fidelity does not visibly degrade from $N=48$ to
+$N=98$.
 
 **Limitations.** Several caveats warrant explicit mention.
+
+*Dataset audit scope.* The publication-grade benchmark currently covers
+40 aligned mdCATH domains for one-step NLL and six aligned rollout
+audits. Earlier 37/57-domain tables were generated before the phi/psi
+residue-index alignment audit and are not used as headline claims here.
+Completing the remaining historical N≈50 aligned rerun would strengthen
+sample size, but it is not required for the present v1 claim.
 
 *Rollout fidelity.* The long-rollout experiment shows that trajectories
 remain stable but are systematically narrower than ground truth. The
@@ -479,19 +535,25 @@ All source code, training scripts, trained checkpoints, and per-domain
 result tables are available at
 <https://github.com/krisss0mecom/AlphaDynamics>. Raw MD trajectories are
 not redistributed; they can be downloaded freely from the mdCATH dataset
-on Hugging Face (`compsciencelab/mdCATH`). Reproduction of the headline
-benchmark requires approximately 2 h on a single RTX-5090.
+on Hugging Face (`compsciencelab/mdCATH`). The aligned audit artifacts
+used in this manuscript are:
+`results/mdcath_aligned20_4000step_cpu.md`,
+`results/mdcath_aligned20_n100_4000step_gpu.md`,
+`results/ramachandran_aligned3_4000step_gpu.md`, and
+`results/ramachandran_aligned3_n98_4000step_gpu.md`.
 
 # 7. Conclusion
 
 We have presented AlphaDynamics, a compact (348K-parameter) per-system
 phase-oscillator neural propagator for protein torsion dynamics. On a
-57-domain subset of the mdCATH benchmark with a strictly uniform
-simulation protocol, AlphaDynamics outperforms a matched MLP baseline on
-every domain (mean NLL ratio 6.4× at $N_\text{res}=50$, 7.5× at
-$N_\text{res}=100$) and preserves long-rollout structure without
-explosion, though rollout distributional fidelity remains an open
-challenge. The architecture—coupled phase oscillators on the torus,
+40-domain aligned mdCATH audit with a strictly uniform simulation
+protocol, AlphaDynamics outperforms a matched MLP baseline on every
+domain (20/20 wins at $N=48$ with 7.66× ratio-of-means, and 20/20 wins
+at $N=98$ with 5.08× ratio-of-means). Six 2500-step aligned rollouts
+preserve stable Ramachandran free-energy structure, with mean JSD 0.194
+at $N=48$ and 0.172 at $N=98$, while exposing a clear limitation on
+high-entropy domains and under the current $\kappa\times30$ sampling
+heuristic. The architecture—coupled phase oscillators on the torus,
 evolved via a learnable ODE inspired by the Kuramoto model and
 phase-gate computing (Gwóźdź 2026a)—demonstrates that torus-native
 inductive bias yields strong per-system surrogates with minimal
@@ -502,17 +564,18 @@ and important question for future work.
 # Figures
 
 ![Figure 1 — Per-domain NLL scatter: MLP (x-axis) vs AlphaDynamics (y-axis).
-Circles: N=50 domains; triangles: N=100 domains. All 57 points lie below
-the parity diagonal; most lie below the 5× line.](figures/fig1_scatter.png){width=85%}
+Circles: aligned N=48 domains; triangles: aligned N=98 domains. All 40
+audit points lie below the parity diagonal.](figures/fig1_scatter.png){width=85%}
 
 ![Figure 2 — Observation 2: win ratio $\mathrm{NLL_{MLP}/NLL_{AlphaDynamics}}$
 versus per-domain identity baseline. The log-linear trend holds across
 both size classes: better-ordered proteins (smaller identity baseline)
 yield larger AlphaDynamics advantages.](figures/fig2_ratio_vs_identity.png){width=85%}
 
-![Figure 3 — Scaling behaviour from $N_\text{res}=50$ (37 domains) to
-$N_\text{res}=100$ (20 domains). MLP NLL distribution shifts upward
-substantially; AlphaDynamics NLL is nearly unchanged.](figures/fig3_scaling.png){width=75%}
+![Figure 3 — Scaling behaviour from aligned $N=48$ (20 domains) to
+aligned $N=98$ (20 domains). AlphaDynamics remains below the MLP baseline in
+both aligned size classes; the ratio is not monotonic with chain length
+after the alignment audit.](figures/fig3_scaling.png){width=75%}
 
 ![Figure 4 — Long-rollout stability. Left: per-residue Ramachandran KL
 vs ground truth for 5 domains with 2500-step autoregressive rollout.
@@ -537,7 +600,7 @@ than MLP on 4/5 domains despite 2.3× more parameters.](figures/fig6_gnn_compari
 from 2500-step AlphaDynamics rollouts (left) vs ground-truth MD (right)
 for representative residues of 1lwjA03 and 1kwgA03. Basin locations and
 depths are well reproduced; the main discrepancy is slight over-concentration
-from the $\kappa$-rescaling heuristic.](figures/ramachandran_1lwjA03.png){width=95%}
+from the $\kappa$-rescaling heuristic.](figures/ramachandran_aligned3_4000step_gpu_1lwjA03.png){width=95%}
 
 ![Figure 8 — Component ablation. Removing ODE integration degrades NLL
 by 654 nats on average (10×). Other components (frequency initialization,

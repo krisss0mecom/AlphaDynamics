@@ -3,14 +3,18 @@
 Output: one npz per (domain, temperature) pair.
 Phi and psi aligned by residue index (mdtraj atom_indices → residue.index).
 """
-import glob, os, tempfile, math
+import argparse
+import glob
+import os
+import tempfile
+from pathlib import Path
 import h5py
 import numpy as np
 import mdtraj as md
 
-BENCH_DIR = "/home/krisss0/AlphaDynamics/mdcath_raw"
-OUT_DIR = "/home/krisss0/AlphaDynamics/mdcath_real_data/mdcath_alltemps"
-os.makedirs(OUT_DIR, exist_ok=True)
+ROOT = Path(__file__).resolve().parents[1]
+BENCH_DIR = ROOT / "mdcath_raw"
+OUT_DIR = ROOT / "mdcath_real_data" / "mdcath_alltemps"
 
 TWO_PI = 2 * np.pi
 TEMPERATURES = ['320', '348', '379', '413', '450']
@@ -38,7 +42,7 @@ def compute_aligned_dihedrals(traj):
     return arr, common
 
 
-def process(h5_file):
+def process(h5_file, out_dir, force=False):
     domain_id = os.path.basename(h5_file).replace("mdcath_dataset_", "").replace(".h5", "")
     with h5py.File(h5_file, 'r') as h:
         group = h[domain_id]
@@ -53,8 +57,8 @@ def process(h5_file):
             os.unlink(pdb_path)
 
         for T in TEMPERATURES:
-            out_file = f"{OUT_DIR}/{domain_id}_T{T}_dihedrals.npz"
-            if os.path.exists(out_file):
+            out_file = out_dir / f"{domain_id}_T{T}_dihedrals.npz"
+            if out_file.exists() and not force:
                 print(f"  {domain_id}@{T}K: cached")
                 continue
             if T not in group:
@@ -81,22 +85,40 @@ def process(h5_file):
                      train=arr[:split], val=arr[split:],
                      N=arr.shape[1], domain_id=domain_id, temperature=int(T),
                      residue_indices=residues,
+                     dihedral_alignment="common_residue_index",
+                     source_h5=str(h5_file),
                      mean_step_deg=float(np.degrees(step)),
                      identity_deg=float(np.degrees(id_err)))
             print(f"  {domain_id}@{T}K: OK N={arr.shape[1]} frames={N_frames} step={np.degrees(step):.1f}° id={np.degrees(id_err):.1f}°")
     return "DONE"
 
 
-if __name__ == "__main__":
-    files = sorted(glob.glob(f"{BENCH_DIR}/data/*.h5"))
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--bench_dir", default=str(BENCH_DIR))
+    parser.add_argument("--out_dir", default=str(OUT_DIR))
+    parser.add_argument("--force", action="store_true",
+                        help="Regenerate output npz files even if they already exist")
+    args = parser.parse_args()
+
+    bench_dir = Path(args.bench_dir)
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    files = sorted(glob.glob(str(bench_dir / "data" / "*.h5")))
     print(f"Processing {len(files)} domains × 5 temperatures = {len(files) * 5} outputs\n")
     for f in files:
         print(f"\n=== {os.path.basename(f)} ===")
-        process(f)
+        process(f, out_dir, force=args.force)
     # Summary
     print("\n=== SUMMARY ===")
-    outputs = sorted(glob.glob(f"{OUT_DIR}/*.npz"))
+    outputs = sorted(glob.glob(str(out_dir / "*.npz")))
     print(f"Total npz files: {len(outputs)}")
     for o in outputs[:15]:
         d = np.load(o)
-        print(f"  {os.path.basename(o)}: N={d['N']}, step={float(d['mean_step_deg']):.1f}°, id={float(d['identity_deg']):.1f}°")
+        alignment = str(d["dihedral_alignment"]) if "dihedral_alignment" in d else "legacy"
+        print(f"  {os.path.basename(o)}: N={d['N']}, step={float(d['mean_step_deg']):.1f}°, id={float(d['identity_deg']):.1f}°, alignment={alignment}")
+
+
+if __name__ == "__main__":
+    main()

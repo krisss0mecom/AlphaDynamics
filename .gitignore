@@ -7,6 +7,9 @@ __pycache__/
 *.pt
 *.ckpt
 *.png
+!paper/figures/fig*.png
+!paper/figures/ramachandran_aligned3_4000step_gpu_*.png
+!paper/figures/ramachandran_aligned3_n98_4000step_gpu_*.png
 runs/
 real_data/
 data/mdcath/
@@ -16,3 +19,20 @@ data/*.h5
 .venv/
 venv/
 .env
+
+# Training/run logs (verbose, not needed in repo)
+results/*.log
+results/final_benchmark/
+results/test_new_warmstart/
+results/test_multi_window/
+results/mpro_test/
+
+# Release artifacts (tarball, hashes — published via GitHub Releases instead)
+release/
+
+# Smoke/intermediate results — not publication grade
+results/mdcath_aligned*_smoke.*
+results/mdcath_aligned1_*.json
+results/mdcath_aligned1_*.md
+results/cross_temp_aligned_smoke.*
+results/ramachandran_aligned_smoke.*
