@@ -157,7 +157,7 @@ Remaining closeout work:
   entry point
 
 PUBLISHED ON ZENODO (2026-04-26):
-- Version DOI: 10.5281/zenodo.19788565
+- Version DOI: 10.5281/zenodo.19791327
 - Concept DOI: 10.5281/zenodo.19788564
 - GitHub Release: v1.0-preprint-2026-04-25
 - License: Apache 2.0 (code) + CC-BY-4.0 (manuscript)

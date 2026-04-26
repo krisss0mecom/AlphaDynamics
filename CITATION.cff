@@ -4,8 +4,8 @@ title: "AlphaDynamics: A compact per-system phase-flow surrogate for protein tor
 authors:
   - family-names: "Gwozdz"
     given-names: "Krzysztof"
-doi: "10.5281/zenodo.19788565"
-url: "https://doi.org/10.5281/zenodo.19788565"
+doi: "10.5281/zenodo.19791327"
+url: "https://doi.org/10.5281/zenodo.19791327"
 repository-code: "https://github.com/krisss0mecom/AlphaDynamics"
 version: "v1.0-preprint-2026-04-25"
 date-released: "2026-04-26"

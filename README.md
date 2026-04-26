@@ -11,7 +11,7 @@ Output: probability distribution over the next frame's conformation.
 
 **Author:** Krzysztof Gwozdz
 **Started:** 2026-04-14
-**Preprint DOI (v1, 2026-04-26):** [10.5281/zenodo.19788565](https://doi.org/10.5281/zenodo.19788565)
+**Preprint DOI (v1, 2026-04-26):** [10.5281/zenodo.19791327](https://doi.org/10.5281/zenodo.19791327)
 **Concept DOI (all versions):** [10.5281/zenodo.19788564](https://doi.org/10.5281/zenodo.19788564)
 
 ## Citation
@@ -26,8 +26,8 @@ If you use this work, please cite:
   year         = {2026},
   publisher    = {Zenodo},
   version      = {v1.0-preprint-2026-04-25},
-  doi          = {10.5281/zenodo.19788565},
-  url          = {https://doi.org/10.5281/zenodo.19788565}
+  doi          = {10.5281/zenodo.19791327},
+  url          = {https://doi.org/10.5281/zenodo.19791327}
 }
 ```
 
@@ -318,7 +318,7 @@ Please cite the Zenodo v1 preprint:
   year         = {2026},
   publisher    = {Zenodo},
   version      = {v1.0-preprint-2026-04-25},
-  doi          = {10.5281/zenodo.19788565},
-  url          = {https://doi.org/10.5281/zenodo.19788565}
+  doi          = {10.5281/zenodo.19791327},
+  url          = {https://doi.org/10.5281/zenodo.19791327}
 }
 ```
