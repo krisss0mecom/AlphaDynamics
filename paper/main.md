@@ -471,23 +471,21 @@ parameter budgets. Whether this per-system approach can be extended to
 transferable models that generalise across protein families is an open
 and important question for future work.
 
-# Figures
-
-![Figure 1 — Per-domain NLL scatter: MLP (x-axis) vs AlphaDynamics (y-axis).
+![Per-domain NLL scatter: MLP (x-axis) vs AlphaDynamics (y-axis).
 Circles: aligned N=48 domains; triangles: aligned N=98 domains. All 40
 audit points lie below the parity diagonal.](figures/fig1_scatter.png){width=85%}
 
-![Figure 2 — Observation 2: win ratio $\mathrm{NLL_{MLP}/NLL_{AlphaDynamics}}$
+![Observation 2: win ratio $\mathrm{NLL_{MLP}/NLL_{AlphaDynamics}}$
 versus per-domain identity baseline. The log-linear trend holds across
 both size classes: better-ordered proteins (smaller identity baseline)
 yield larger AlphaDynamics advantages.](figures/fig2_ratio_vs_identity.png){width=85%}
 
-![Figure 3 — Scaling behaviour from aligned $N=48$ (20 domains) to
+![Scaling behaviour from aligned $N=48$ (20 domains) to
 aligned $N=98$ (20 domains). AlphaDynamics remains below the MLP baseline in
 both aligned size classes; the ratio is not monotonic with chain length
 after the alignment audit.](figures/fig3_scaling.png){width=75%}
 
-![Figure 4 — Ramachandran free-energy maps. Per-residue $G(\varphi,\psi)$
+![Ramachandran free-energy maps. Per-residue $G(\varphi,\psi)$
 from 2500-step AlphaDynamics rollouts (left) vs ground-truth MD (right)
 for representative residues of 1lwjA03 and 1kwgA03. Basin locations and
 depths are well reproduced; the main discrepancy is slight over-concentration
