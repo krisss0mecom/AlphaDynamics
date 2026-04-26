@@ -36,3 +36,10 @@ results/mdcath_aligned1_*.json
 results/mdcath_aligned1_*.md
 results/cross_temp_aligned_smoke.*
 results/ramachandran_aligned_smoke.*
+
+# Personal/private files (NEVER commit)
+CV_*.pdf
+*_cv.pdf
+BIORXIV_*.txt
+*BIORXIV*
+PLAN_FIXES_*.md
