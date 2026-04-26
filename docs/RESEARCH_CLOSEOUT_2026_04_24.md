@@ -36,11 +36,9 @@ Not defensible yet:
    The local 20-domain N≈50 subset has been rerun from aligned inputs; the
    remaining historical domains still need aligned reruns if their H5 files are
    downloaded.
-2. `paper/main_v2.md` describes basin-DAM, Timewarp/MSM, Mpro and web-tool claims
-   that are not all backed by local source code and completed artifacts.
-3. Rollout fidelity in v1 still depends on `kappa_mult=30` and the model samples
+2. Rollout fidelity in v1 still depends on `kappa_mult=30` and the model samples
    narrower trajectories than ground truth.
-4. Local CUDA on Orin is usable after freeing desktop/browser memory. Heavy runs
+3. Local CUDA on Orin is usable after freeing desktop/browser memory. Heavy runs
    should still be launched with conservative batch sizes and monitored because
    unified RAM/VRAM pressure can trigger allocation failures.
 
@@ -87,7 +85,6 @@ Equivalent runner:
 DEVICE=cpu STEPS=4000 BATCH=512 src/run_aligned5_benchmark.sh
 ```
 
-The smoke output `results/mdcath_aligned5_smoke.md` only verifies the pipeline.
 It is not a scientific benchmark because it uses one training step.
 
 Status:
@@ -95,11 +92,8 @@ Status:
 - completed aligned conversion for local domains:
   `1hw7A02`, `1kwgA03`, `1lwjA03`, `1ss3A00`, `1vq8L01`
 - completed CPU smoke benchmark:
-  `results/mdcath_aligned5_smoke.md`
 - completed CPU 100-step aligned audit:
-  `results/mdcath_aligned5_100step_cpu.md`
 - completed CPU 4000-step aligned benchmark on 5 domains:
-  `results/mdcath_aligned5_4000step_cpu.md`
 - completed CPU 4000-step aligned benchmark on 20 domains:
   `results/mdcath_aligned20_4000step_cpu.md`
 - regenerated all-temperature `.npz` files for 20 domains x 5 temperatures
@@ -117,7 +111,6 @@ Status:
   `src/alphadynamics_cli.py` with `convert`, `train`, `rollout`, and `report`
   subcommands.
 - prepared a clean v1 preprint release bundle:
-  `release/alphadynamics_v1_preprint_2026_04_25.tar.gz`
 
 100-step audit result:
 

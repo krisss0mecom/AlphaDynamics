@@ -27,8 +27,8 @@ and reports disordered domains as explicit limitations.
 
 | SHA256 | Path |
 |---|---|
-| `ef4b07b5db09d5a059a4ab97d1f94cb725310b15d901f89a6b0d3be99712757c` | `paper/main.md` |
-| `222f5d31390ceffffa0589324374b518d90dd8709b8559645df4a6587d304fcb` | `paper/main.pdf` |
+| `c1e1ae3154008ac382b53c72fb72de9e8f5f3b3793a3135dfcf756b07cb74004` | `paper/main.md` |
+| `ebdf0719663dcdc8a298f03318def89ae03205c27afbeb476c17987dbe9860fd` | `paper/main.pdf` |
 
 ## Primary Figures
 
@@ -44,7 +44,6 @@ and reports disordered domains as explicit limitations.
 
 | SHA256 | Path |
 |---|---|
-| `3a8c39582bd3fa905c2b8f589cf6a154dcd0ff613de7ba49ecf53d89cbab6ff9` | `results/alphadynamics_audit_report.md` |
 | `a6378fd3531322d4de1e5d6342c80f7a2e2db89fb514f17c464f5d6766c809a7` | `results/mdcath_aligned20_4000step_cpu.json` |
 | `b2431ef90224e8a34f2777692f4f5cade32d350363b31c1a25d86d6d15d58981` | `results/mdcath_aligned20_4000step_cpu.md` |
 | `15fdca641fa8cfd40be39d46d0b8289e4bb0cd356a9abc00967703014a4423dd` | `results/mdcath_aligned20_n100_4000step_gpu.json` |
@@ -68,7 +67,6 @@ and reports disordered domains as explicit limitations.
 
 ```bash
 python3 -m py_compile src/*.py paper/*.py
-bash -n src/run_aligned5_benchmark.sh src/final_benchmark.sh
 python3 src/alphadynamics_cli.py report --dry-run
 pdfinfo paper/main.pdf
 ```

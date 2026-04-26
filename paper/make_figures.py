@@ -196,107 +196,10 @@ def fig3_scaling():
     print("Wrote fig3_scaling")
 
 
-# ============================================================
-# Fig 4 — Rollout stability
-# ============================================================
-def fig4_rollout():
-    roll = json.load(open(f"{RES}/mdcath_rollout_results.json"))
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
-
-    domains = list(roll.keys())
-    colors = plt.cm.viridis(np.linspace(0.15, 0.85, len(domains)))
-
-    for color, dom in zip(colors, domains):
-        r = roll[dom]
-        ax1.bar([dom], [r["kl_mean"]], color=color, alpha=0.8,
-                edgecolor="black", linewidth=0.5)
-
-    ax1.set_ylabel("Per-residue Ramachandran KL (mean)")
-    ax1.set_title("Distribution fidelity — 2500-step rollout")
-    ax1.tick_params(axis="x", rotation=25)
-    ax1.axhline(0.1, color="green", ls="--", lw=0.8,
-                label="KL ≈ 0.1 (ground truth vs ground truth)")
-    ax1.legend()
-    ax1.grid(True, alpha=0.25, axis="y")
-
-    # Drift plot
-    for color, dom in zip(colors, domains):
-        r = roll[dom]
-        early = r["step_early_deg"]
-        late = r["step_late_deg"]
-        gt = r["step_ground_truth_deg"]
-        ax2.plot([0, 1], [early, late], "o-", color=color, label=dom, lw=1.5)
-        ax2.plot([-0.05, 1.05], [gt, gt], ":", color=color, alpha=0.5, lw=1)
-
-    ax2.set_xticks([0, 1])
-    ax2.set_xticklabels(["early\n(steps 0-100)", "late\n(steps 2400-2500)"])
-    ax2.set_ylabel("Joint step size (°)")
-    ax2.set_title("Step drift over 2500-step rollout\n(dotted = ground-truth reference)")
-    ax2.legend(loc="upper right", fontsize=8)
-    ax2.grid(True, alpha=0.25)
-
-    plt.tight_layout()
-    plt.savefig(OUT / "fig4_rollout.png", bbox_inches="tight")
-    plt.savefig(OUT / "fig4_rollout.pdf", bbox_inches="tight")
-    plt.close()
-    print("Wrote fig4_rollout")
-
-
-# ============================================================
-# Fig 5 — Architecture schematic (ASCII → draw simple block diagram)
-# ============================================================
-def fig5_architecture():
-    fig, ax = plt.subplots(figsize=(9, 3.5))
-    ax.axis("off")
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 3)
-
-    def box(x, y, w, h, text, color="#eef2f7", edge="black"):
-        rect = plt.Rectangle((x, y), w, h, facecolor=color,
-                             edgecolor=edge, linewidth=1.2)
-        ax.add_patch(rect)
-        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center",
-                fontsize=9.5)
-
-    def arrow(x1, y1, x2, y2):
-        ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
-                    arrowprops=dict(arrowstyle="->", lw=1.2, color="black"))
-
-    # Input
-    box(0.1, 1.1, 1.4, 0.8, "Input\n(φ,ψ)∈T^{2N}", "#fff5b1")
-    arrow(1.5, 1.5, 2.1, 1.5)
-    # Lift
-    box(2.1, 1.1, 1.5, 0.8, "Affine lift\nto M phases", "#eef2f7")
-    arrow(3.6, 1.5, 4.3, 1.5)
-    # ODE
-    box(4.3, 0.4, 2.5, 2.2,
-        "RK4 adjoint ODE\n"
-        r"$\dot\theta_i=\omega_i+\sum W_{ij}\cos\theta_j\sin(\theta_j-\theta_i)+a\sin(\alpha_i-\theta_i)$"
-        + "\n\nprimes ω, golden α",
-        "#cee5d0")
-    arrow(6.8, 1.5, 7.5, 1.5)
-    # Readout
-    box(7.5, 1.1, 1.0, 0.8, "2M sin/cos", "#eef2f7")
-    arrow(8.5, 1.5, 9.0, 1.5)
-    # Head
-    box(9.0, 0.8, 0.9, 1.4, "MDN\nK=8 von\nMises", "#f6cbba")
-
-    ax.set_title("AlphaDynamics architecture — 348K parameters end-to-end",
-                 fontsize=11)
-
-    plt.tight_layout()
-    plt.savefig(OUT / "fig5_architecture.png", bbox_inches="tight")
-    plt.savefig(OUT / "fig5_architecture.pdf", bbox_inches="tight")
-    plt.close()
-    print("Wrote fig5_architecture")
-
-
 if __name__ == "__main__":
     import os
     os.makedirs(OUT, exist_ok=True)
     fig1_scatter()
     fig2_ratio_vs_identity()
     fig3_scaling()
-    fig4_rollout()
-    fig5_architecture()
     print("\nAll figures written to:", OUT)

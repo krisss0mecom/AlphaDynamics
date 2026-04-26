@@ -178,7 +178,7 @@ periodicity.
 
 # 3. Method
 
-The full pipeline is summarized in Figure 5.
+The full pipeline operates entirely on the torsion torus.
 
 ## 3.1 Phase-flow encoder
 
@@ -235,15 +235,6 @@ $(\sin\varphi_i,\cos\varphi_i,\sin\psi_i,\cos\psi_i)$ input, passes it
 through three GELU layers of width 128, and produces the parameters of
 an identical mixture head. The baseline uses slightly more parameters
 (\~396K) than AlphaDynamics (\~348K) so the comparison is conservative.
-
-## 3.5 GNN baseline
-
-We additionally compare against a Graph Attention Network (GAT) baseline
-implemented with torch-geometric GATConv layers. The graph is a linear
-chain (residue $i$ connects to $i\pm 1$), with 3 GAT layers, 4 attention
-heads, node dimension 64, and the same MDN output head as AlphaDynamics.
-The GAT baseline contains 875K parameters—more than twice AlphaDynamics
-(348K)—giving it a capacity advantage.
 
 # 4. Experiments
 
@@ -312,30 +303,7 @@ per-domain win ratios range from 3.47× (`2of5H00`) to 9.82×
 `results/mdcath_aligned20_4000step_cpu.md` and
 `results/mdcath_aligned20_n100_4000step_gpu.md`.
 
-## 4.3 Auxiliary cross-temperature check
-
-As an auxiliary check, not part of the primary aligned headline claim,
-we trained on 348 K only and evaluated on all five mdCATH temperatures
-(320, 348, 379, 413, 450 K) across 5 representative domains. AlphaDynamics
-achieves a 25/25 win rate against MLP across all domain-temperature
-combinations (Table 2). Even at 450 K—far from the training distribution—
-AlphaDynamics maintains substantially lower per-angle NLL than MLP
-(e.g. 0.70 vs 3.29 on 1kwgA03).
-
-**Table 2.** Cross-temperature generalization. Per-angle NLL for models
-trained at 348 K only, evaluated at all five mdCATH temperatures.
-
-| Domain | 320 K (MLP/AD) | 348 K | 379 K | 413 K | 450 K |
-|--------|---------------|-------|-------|-------|-------|
-| 1hw7A02 | 3.76 / 0.87 | 4.13 / 1.09 | 7.59 / 1.35 | 7.96 / 1.47 | 9.53 / 1.59 |
-| 1kwgA03 | 3.10 / 1.10 | 1.19 / 0.23 | 1.70 / 0.57 | 2.42 / 0.57 | 3.29 / 0.70 |
-| 1lwjA03 | 1.98 / 0.90 | 1.28 / 0.33 | 1.21 / 0.39 | 2.00 / 0.58 | 26.71 / 7.23 |
-| 1ss3A00 | 2.36 / 0.75 | 1.69 / 0.67 | 3.07 / 0.82 | 8.87 / 2.14 | 14.94 / 3.19 |
-| 1vq8L01 | 2.61 / 1.45 | 3.01 / 1.47 | 4.90 / 1.51 | 4.22 / 1.56 | 4.53 / 1.56 |
-
-AlphaDynamics wins 25/25 domain-temperature combinations.
-
-## 4.4 Empirical observations
+## 4.3 Empirical observations
 
 **Observation 1 — warmup scaling (pilot, n=4 domains).** We swept
 $t_\text{max}\in\{1,2,4,8\}$ on four pilot 50-residue domains and found
@@ -358,21 +326,7 @@ domains can show much larger margins, up to 21.64× (`1zv8G00`) and
 learnable temporal structure. Figure 2 shows the relationship across
 both aligned size classes.
 
-## 4.5 Long-rollout stability
-
-Before the free-energy audit below, we ran a preliminary 2500-step
-autoregressive rollout on five 50-residue domains spanning the identity
-range. With concentration re-scaling $\kappa\to30\kappa$ at sampling time
-(chosen empirically; see §5), step magnitudes decreased slightly over
-the rollout (mean drift $-32°$ joint), i.e. no exponential divergence was
-observed. Per-residue Ramachandran Kullback–Leibler divergence against
-the full reference distribution averaged 1.84, compared to a
-ground-truth-vs-ground-truth KL of $\sim 0.1$. This preliminary test
-establishes rollout stability; the aligned free-energy audit in §4.6 is
-the primary distributional-fidelity result. Figure 4 reports the
-preliminary stability metrics per domain.
-
-## 4.6 Ramachandran free-energy fidelity
+## 4.4 Ramachandran free-energy fidelity
 
 We computed per-residue free-energy surfaces $G(\varphi,\psi) = -RT\ln P$
 from 2500-step rollouts and compared to ground truth via four metrics:
@@ -400,51 +354,7 @@ visibly degrade with chain length on aligned data. The full aligned
 tables are in `results/ramachandran_aligned3_4000step_gpu.md` and
 `results/ramachandran_aligned3_n98_4000step_gpu.md`.
 
-## 4.7 GNN baseline comparison
-
-We compared AlphaDynamics against both MLP and a 3-layer GAT-GNN (875K
-parameters) on 5 domains at 348 K (Figure 6). AlphaDynamics wins 5/5
-against both baselines. Notably, GAT-GNN performs *worse* than MLP on
-4/5 domains despite having 2.3× more parameters. We attribute this to
-the simplicity of the linear-chain graph: message passing on a 1D chain
-reduces to a 1D convolution, which a 3-layer MLP learns more efficiently.
-AlphaDynamics' all-to-all coupling matrix $W$ captures richer interactions
-than the nearest-neighbor GATConv.
-
-| Domain | MLP NLL | GAT NLL | AD NLL | AD/MLP | AD/GAT |
-|---|---|---|---|---|---|
-| 1lwjA03 | 253.8 | 274.2 | **31.8** | 8.0× | 8.6× |
-| 1kwgA03 | 139.4 | 379.1 | **21.5** | 6.5× | 17.6× |
-| 1ss3A00 | 202.6 | 569.3 | **66.4** | 3.1× | 8.6× |
-| 1vq8L01 | 609.2 | 197.7 | **139.5** | 4.4× | 1.4× |
-| 1hw7A02 | 544.4 | 1040.6 | **105.6** | 5.2× | 9.9× |
-
-## 4.8 Ablation: axis-independent vs correlated MDN head
-
-We tested whether modeling $\varphi$–$\psi$ correlations explicitly
-within each mixture component (bivariate von Mises with cross-concentration
-$\kappa_c$) improves rollout fidelity. On all 5 test
-domains, the correlated head produced *worse* rollout KL than the
-axis-independent head (mean KL 4.18 vs 2.04). We conclude that the
-8-component mixture implicitly captures $\varphi$–$\psi$ correlations
-through component placement, and explicit cross-terms add noise without
-benefit at this training scale.
-
-
-## 4.9 Component ablation
-
-To identify which elements contribute most, we tested five variants on
-5 domains: the full model, random frequencies (instead of structured),
-no anchor term, standard Kuramoto coupling (without asymmetric gating),
-and no ODE (MLP on lifted phases). ODE integration is the dominant
-contributor: removing it degrades NLL by 654 nats on average (10×
-worse). The remaining components (frequency initialization, anchor,
-coupling form) have negligible average impact (|ΔNLL| < 1.5), confirming
-that the model's strength lies in the continuous dynamical system prior
-on the torus, not in any particular parameterization of the ODE
-right-hand side (Figure 8).
-
-## 4.10 Computational cost
+## 4.5 Computational cost
 
 On a single NVIDIA RTX-5090, AlphaDynamics generates one predicted frame
 (a one-nanosecond step) in $\approx 16$ ms including the adjoint
@@ -577,34 +487,11 @@ aligned $N=98$ (20 domains). AlphaDynamics remains below the MLP baseline in
 both aligned size classes; the ratio is not monotonic with chain length
 after the alignment audit.](figures/fig3_scaling.png){width=75%}
 
-![Figure 4 — Long-rollout stability. Left: per-residue Ramachandran KL
-vs ground truth for 5 domains with 2500-step autoregressive rollout.
-Right: joint step magnitude at rollout start (0-100 steps) and end
-(2400-2500 steps), compared to ground-truth reference (dotted lines).
-Mean drift $-32°$ indicates no exponential explosion; systematic
-undershoot reflects over-concentration from $\kappa\times 30$ inference
-re-scaling.](figures/fig4_rollout.png){width=95%}
-
-![Figure 5 — AlphaDynamics architecture. Input torsions are lifted to M
-oscillator phases, evolved by a CNOT-coupled phase-flow ODE with
-learnable frequencies and anchors, and read out as
-a K-component mixture of axis-independent von Mises densities on the
-torus.](figures/fig5_architecture.png){width=95%}
-
-![Figure 6 — GNN baseline comparison. Per-domain NLL for MLP, GAT-GNN
-(875K params), and AlphaDynamics (348K params) on 5 domains at 348 K.
-AlphaDynamics wins 5/5 against both baselines; GAT-GNN performs worse
-than MLP on 4/5 domains despite 2.3× more parameters.](figures/fig6_gnn_comparison.png){width=85%}
-
-![Figure 7 — Ramachandran free-energy maps. Per-residue $G(\varphi,\psi)$
+![Figure 4 — Ramachandran free-energy maps. Per-residue $G(\varphi,\psi)$
 from 2500-step AlphaDynamics rollouts (left) vs ground-truth MD (right)
 for representative residues of 1lwjA03 and 1kwgA03. Basin locations and
 depths are well reproduced; the main discrepancy is slight over-concentration
 from the $\kappa$-rescaling heuristic.](figures/ramachandran_aligned3_4000step_gpu_1lwjA03.png){width=95%}
-
-![Figure 8 — Component ablation. Removing ODE integration degrades NLL
-by 654 nats on average (10×). Other components (frequency initialization,
-anchor, coupling form) have negligible impact.](figures/fig8_ablation.png){width=95%}
 
 # Acknowledgements
 

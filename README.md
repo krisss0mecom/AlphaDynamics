@@ -77,39 +77,6 @@ at 348 K:
 All 20 input `.npz` files have `dihedral_alignment=common_residue_index`.
 Full table: [results/mdcath_aligned20_4000step_cpu.md](results/mdcath_aligned20_4000step_cpu.md).
 
-### Historical mdCATH benchmark — pre-alignment, superseded
-
-These tables were generated before the phi/psi residue-index alignment audit.
-They remain useful as development history, but the current manuscript uses the
-aligned 20+20 domain audit above instead.
-
-| Size class | N residues | Domains | Win rate | Mean ratio | Best ratio |
-|---|---|---|---|---|---|
-| Small | 50 | 37 | **37/37** | 5.4× | 11.2× (1lwjA03) |
-| **Medium** | **100** | **20** | **20/20** | **6.3×** | **21.7× (5cmbA02)** |
-| **Total** | — | **57** | **57/57 (100%)** | — | — |
-
-P-value that 57/57 is random: ≈ 7 × 10⁻¹⁸.
-
-**Superseded scaling note:** the pre-alignment run suggested the mean ratio
-increased from 5.4× at N=50 to 6.3× at N=100. The aligned audit changes that
-statement: N=48 has a 7.66× ratio of means and N=98 has 5.08×. The defensible
-claim is that AlphaDynamics' advantage persists at larger N and rollout
-fidelity does not visibly degrade, not that the NLL ratio monotonically grows
-with chain length.
-
-Full tables:
-- [results/mdcath_benchmark_results.md](results/mdcath_benchmark_results.md) — N=50 (37 domains)
-- [results/mdcath_N100_results.md](results/mdcath_N100_results.md) — N=100 (20 domains)
-
-### Rollout stability (2500-step autoregressive)
-
-On 5 domains, 2500 autoregressive frames (= length of original mdCATH replica):
-no trajectory explosion (mean step drift −32° — steps shrink slightly, not grow).
-Mean per-residue Ramachandran KL vs ground truth: 1.84.
-
-See [results/mdcath_rollout_results.md](results/mdcath_rollout_results.md).
-
 ### Aligned rollout free-energy audit — 3 domains, GPU
 
 Fresh aligned 2500-step rollouts with `κ×30` on three representative domains:
@@ -198,29 +165,36 @@ dφ_i/dt = ω_i + Σ_j W_ij · cos(φ_j) · sin(φ_j − φ_i) + a · sin(φ_anc
 
 ```
 AlphaDynamics/
-├── README.md                  — this file
+├── README.md                            — this file
 ├── requirements.txt
-├── src/                       — model + training + eval code
-│   ├── chain_model.py           — ChainMLP + ChainPhaseFlow (AlphaDynamics)
-│   ├── train_real.py            — training loop (dataset agnostic)
-│   ├── train_chain.py           — training helpers
-│   ├── chain_md.py              — synthetic Langevin MD generator
-│   ├── rollout_eval.py          — KL divergence, per-residue evaluation
-│   ├── mdcath_convert_v3.py     — mdCATH HDF5 → dihedral npz
-│   ├── mdcath_benchmark.py      — aligned mdCATH benchmark runner
-│   └── mdcath_rollout_test.py   — 2500-step rollout stability test
-├── results/
-│   ├── mdcath_benchmark_results.md
-│   ├── mdcath_benchmark_results.json
-│   ├── mdcath_rollout_results.md
-│   └── mdcath_rollout_results.json
-├── docs/                      — daily research logs (Polish)
-│   ├── EKSPERYMENTY_2026_04_14.txt   — every experiment with numbers
-│   ├── ODKRYCIA_2026_04_14.txt       — chronological discoveries
-│   ├── DECYZJE_2026_04_14.txt        — architectural decisions + why
-│   ├── PORAZKI_2026_04_14.txt        — failures + lessons
-│   └── STRATEGIA_2026_04_15.txt      — publication / collaboration strategy
-└── data/                      — how to obtain data (raw data not committed)
+├── src/                                 — model + training + eval code
+│   ├── alphadynamics_cli.py               — CLI MVP (convert/train/rollout/report)
+│   ├── chain_model.py                     — ChainMLP + ChainPhaseFlow
+│   ├── train_real.py                      — ChainPhaseFlowVar + training utilities
+│   ├── train_chain.py                     — chain training helpers
+│   ├── chain_md.py                        — synthetic Langevin MD generator
+│   ├── rollout_eval.py                    — autoregressive rollout + metrics
+│   ├── ramachandran_energy_v2.py          — Ramachandran free-energy audit
+│   ├── mdcath_convert_v3.py               — mdCATH HDF5 → aligned dihedral npz
+│   ├── mdcath_convert_alltemps.py         — multi-temperature converter
+│   ├── mdcath_benchmark.py                — aligned mdCATH benchmark runner
+│   └── run_aligned5_benchmark.sh          — reproducible 5-domain audit
+├── paper/
+│   ├── main.md                            — manuscript source
+│   ├── main.pdf                           — compiled preprint
+│   ├── references.bib
+│   ├── make_figures.py
+│   └── figures/                           — fig1/fig2/fig3 + 6 ramachandran panels
+├── results/                             — aligned audit artifacts
+│   ├── mdcath_aligned20_4000step_cpu.{json,md}      — N=48 NLL (20 domains)
+│   ├── mdcath_aligned20_n100_4000step_gpu.{json,md} — N=98 NLL (20 domains)
+│   ├── ramachandran_aligned3_4000step_gpu.{json,md} — N=48 rollout (3 domains)
+│   └── ramachandran_aligned3_n98_4000step_gpu.{json,md} — N=98 rollout (3 domains)
+├── docs/                                — preprint package & closeout notes
+│   ├── PREPRINT_PACKAGE_2026_04_25.md
+│   ├── RESEARCH_CLOSEOUT_2026_04_24.md
+│   └── AUDIT_MANIFEST_2026_04_25.md
+└── data/                                — how to obtain mdCATH (raw not committed)
 ```
 
 ## Reproducing results
@@ -245,8 +219,8 @@ python src/mdcath_benchmark.py \
 # Or run the aligned five-domain audit end to end
 DEVICE=cpu STEPS=4000 BATCH=512 src/run_aligned5_benchmark.sh
 
-# 4. Rollout stability
-python src/mdcath_rollout_test.py
+# 4. Ramachandran free-energy rollout audit
+python src/ramachandran_energy_v2.py
 ```
 
 ## CLI MVP

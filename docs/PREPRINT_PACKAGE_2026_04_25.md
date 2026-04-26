@@ -48,10 +48,6 @@ Core manuscript:
 - `paper/figures/fig1_scatter.png`
 - `paper/figures/fig2_ratio_vs_identity.png`
 - `paper/figures/fig3_scaling.png`
-- `paper/figures/fig4_rollout.png`
-- `paper/figures/fig5_architecture.png`
-- `paper/figures/fig6_gnn_comparison.png`
-- `paper/figures/fig8_ablation.png`
 - `paper/figures/ramachandran_aligned3_4000step_gpu_1lwjA03.png`
 - `paper/figures/ramachandran_aligned3_4000step_gpu_1kwgA03.png`
 - `paper/figures/ramachandran_aligned3_4000step_gpu_1vq8L01.png`
@@ -61,7 +57,6 @@ Core manuscript:
 
 Audited result files:
 
-- `results/alphadynamics_audit_report.md`
 - `results/mdcath_aligned20_4000step_cpu.md`
 - `results/mdcath_aligned20_4000step_cpu.json`
 - `results/mdcath_aligned20_n100_4000step_gpu.md`
@@ -78,8 +73,6 @@ Audited code paths:
 - `src/mdcath_convert_alltemps.py`
 - `src/mdcath_benchmark.py`
 - `src/ramachandran_energy_v2.py`
-- `src/tdm_model.py`
-- `src/test_tdm.py`
 - `src/chain_model.py`
 - `src/train_real.py`
 
@@ -91,18 +84,11 @@ Documentation:
 - `docs/AUDIT_MANIFEST_2026_04_25.md`
 - `docs/PREPRINT_PACKAGE_2026_04_25.md`
 
-## Files To Exclude From The v1 Claim
+## Files Excluded From The v1 Claim
 
-These can remain in the repository as historical/development artifacts, but
-they should not be used as headline evidence:
-
-- `paper/main_v2.md`, `paper/main_v2.pdf`, `paper/main_v2.html`
-- `results/mdcath_benchmark_results.*`
-- `results/mdcath_N100_results.*`
-- smoke outputs such as `results/mdcath_aligned5_smoke.*`
-- short undertrained audits such as `results/mdcath_aligned5_100step_cpu.*`
-- local logs such as `results/*run.log`, `results/*stdout.log`
-- raw `.h5`, `.npz`, checkpoints, and local cache directories
+The repository ships only the publication-grade aligned audit. Pre-alignment
+benchmark tables, smoke runs, undertrained audits, raw HDF5/npz inputs, and
+checkpoints are kept out of the release tarball and the v1 evidence chain.
 
 ## Reproduction Commands
 
@@ -141,14 +127,12 @@ Build the compact audit report:
 
 ```bash
 python src/alphadynamics_cli.py report \
-  --output results/alphadynamics_audit_report.md
 ```
 
 ## Final Pre-Submission Checks
 
 ```bash
 python3 -m py_compile src/*.py paper/*.py
-bash -n src/run_aligned5_benchmark.sh src/final_benchmark.sh
 python3 src/alphadynamics_cli.py report --dry-run
 pandoc main.md --pdf-engine=weasyprint -o main.pdf  # run from paper/
 pdfinfo paper/main.pdf
