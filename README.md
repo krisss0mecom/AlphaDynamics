@@ -1,5 +1,9 @@
 # AlphaDynamics
 
+[![DOI](https://zenodo.org/badge/1211339504.svg)](https://doi.org/10.5281/zenodo.19788564)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![License: CC BY 4.0](https://img.shields.io/badge/Manuscript-CC--BY--4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+
 Per-system neural propagator for molecular dynamics emulation on the protein
 torsion torus T^N.
 Input: current protein conformation (dihedral angles φ, ψ per residue).
@@ -7,6 +11,25 @@ Output: probability distribution over the next frame's conformation.
 
 **Author:** Krzysztof Gwozdz
 **Started:** 2026-04-14
+**Preprint DOI (v1, 2026-04-26):** [10.5281/zenodo.19788565](https://doi.org/10.5281/zenodo.19788565)
+**Concept DOI (all versions):** [10.5281/zenodo.19788564](https://doi.org/10.5281/zenodo.19788564)
+
+## Citation
+
+If you use this work, please cite:
+
+```bibtex
+@misc{gwozdz2026alphadynamics,
+  author       = {Gwóźdź, Krzysztof},
+  title        = {{AlphaDynamics}: A compact per-system phase-flow surrogate
+                  for protein torsion dynamics},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v1.0-preprint-2026-04-25},
+  doi          = {10.5281/zenodo.19788565},
+  url          = {https://doi.org/10.5281/zenodo.19788565}
+}
+```
 
 ## What it does
 

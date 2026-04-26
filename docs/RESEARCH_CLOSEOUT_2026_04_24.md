@@ -163,6 +163,12 @@ Remaining closeout work:
 - harden CLI product wrapper with checkpoint export, config files, and packaged
   entry point
 
+PUBLISHED ON ZENODO (2026-04-26):
+- Version DOI: 10.5281/zenodo.19788565
+- Concept DOI: 10.5281/zenodo.19788564
+- GitHub Release: v1.0-preprint-2026-04-25
+- License: Apache 2.0 (code) + CC-BY-4.0 (manuscript)
+
 PUBLICATION-GRADE AUDIT COMPLETE (2026-04-25):
 The minimum viable paper data is now in place:
 - 20-domain N=48 NLL aligned (20/20 wins, 7.66× ratio)
