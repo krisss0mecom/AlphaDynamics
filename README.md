@@ -59,11 +59,9 @@ index and stores `residue_indices` and
 
 Validated aligned local inputs currently exist for 20 N=48 mdCATH domains at
 348 K, 20 N=98 mdCATH domains at 348 K, and the matching all-temperature
-rollout inputs. The smoke test
-`results/mdcath_aligned5_smoke.md` verifies the new benchmark path only; it is
-not a trained scientific result. A short CPU audit with 100 training steps is
-available at `results/mdcath_aligned5_100step_cpu.md`; it is a sanity-check,
-not a publication-grade replacement for the full 4000-step benchmark.
+rollout inputs. Smoke tests and short undertrained audits are excluded from the
+public release; the shipped result tables below are the publication-grade
+4000-step audits.
 
 ### Aligned mdCATH N≈50 audit — 20 domains, 4000 steps
 
@@ -304,9 +302,23 @@ audited benchmarks.
 
 ## License
 
-To be decided.
+Source code is licensed under the Apache License 2.0; see `LICENSE`.
+The manuscript, paper figures, result tables, and documentation are licensed
+under CC BY 4.0; see `LICENSE-MANUSCRIPT.md`.
 
 ## Citation
 
-Manuscript in preparation. Please do not cite without contacting the
-author first.
+Please cite the Zenodo v1 preprint:
+
+```bibtex
+@misc{gwozdz2026alphadynamics,
+  author       = {Gwóźdź, Krzysztof},
+  title        = {{AlphaDynamics}: A compact per-system phase-flow surrogate
+                  for protein torsion dynamics},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v1.0-preprint-2026-04-25},
+  doi          = {10.5281/zenodo.19788565},
+  url          = {https://doi.org/10.5281/zenodo.19788565}
+}
+```

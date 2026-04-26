@@ -1,0 +1,28 @@
+{
+  "title": "AlphaDynamics: A compact per-system phase-flow surrogate for protein torsion dynamics",
+  "upload_type": "software",
+  "publication_date": "2026-04-26",
+  "creators": [
+    {
+      "name": "Gwozdz, Krzysztof"
+    }
+  ],
+  "description": "AlphaDynamics is a compact per-system phase-flow surrogate for protein backbone torsion dynamics, validated on aligned mdCATH one-step NLL and rollout/free-energy audits.",
+  "access_right": "open",
+  "license": "Apache-2.0",
+  "keywords": [
+    "protein dynamics",
+    "molecular dynamics",
+    "torsion angles",
+    "phase oscillators",
+    "neural ODE",
+    "mdCATH"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/krisss0mecom/AlphaDynamics",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

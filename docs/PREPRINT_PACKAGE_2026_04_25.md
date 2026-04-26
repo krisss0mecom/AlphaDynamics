@@ -79,6 +79,10 @@ Audited code paths:
 Documentation:
 
 - `README.md`
+- `LICENSE`
+- `LICENSE-MANUSCRIPT.md`
+- `CITATION.cff`
+- `.zenodo.json`
 - `data/README.md`
 - `docs/RESEARCH_CLOSEOUT_2026_04_24.md`
 - `docs/AUDIT_MANIFEST_2026_04_25.md`
