@@ -44,3 +44,8 @@ BIORXIV_*.txt
 *BIORXIV*
 PLAN_FIXES_*.md
 logs/
+
+# Local input data caches
+mdcath_real_data/
+mdcath_raw/
+timewarp_real_data/
