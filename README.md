@@ -182,7 +182,7 @@ AlphaDynamics/
 ├── README.md                            — this file
 ├── requirements.txt
 ├── src/                                 — model + training + eval code
-│   ├── alphadynamics_cli.py               — CLI MVP (convert/train/rollout/report)
+│   ├── alphadynamics_cli.py               — product CLI (doctor/validate/train/rollout/baselines/report)
 │   ├── chain_model.py                     — ChainMLP + ChainPhaseFlow
 │   ├── train_real.py                      — ChainPhaseFlowVar + training utilities
 │   ├── train_chain.py                     — chain training helpers
@@ -292,6 +292,18 @@ alphadynamics strong-baseline \
   --seeds 42 43 44 \
   --device auto
 
+# Audit against a true temporal baseline with an 8-frame GRU context
+alphadynamics temporal-baseline \
+  --data-dir mdcath_real_data/mdcath_348K \
+  --out-prefix temporal_gru_3dom_3seed_4000step_cuda \
+  --domains 1lwjA03 1kwgA03 1vq8L01 \
+  --window 8 \
+  --steps 4000 \
+  --batch 128 \
+  --seeds 42 43 44 \
+  --phaseflow-tmax 4 \
+  --device auto
+
 # Build compact Markdown summary from existing JSON result files
 alphadynamics report \
   --output results/alphadynamics_audit_report.md
@@ -302,6 +314,8 @@ script call before launching a long job.
 
 The productization plan and research expansion ladder are documented in
 [docs/PRODUCT_V1_2026_04_28.md](docs/PRODUCT_V1_2026_04_28.md).
+The reviewer hardening checklist is tracked in
+[docs/REVIEWER_RISK_REGISTER_2026_04_28.md](docs/REVIEWER_RISK_REGISTER_2026_04_28.md).
 
 ## Related work
 
@@ -331,11 +345,13 @@ of torus dynamics** with minimal parameters and ODE-based inductive bias.
 - [x] Aligned N=98 rollout audit — 3 domains, comparable fidelity to N=48
 - [x] Converter fixed to align φ/ψ by residue index
 - [x] CLI MVP wrapper — convert, train, rollout, report
-- [x] Product CLI wrapper — doctor, validate-data, kappa-sweep, strong-baseline, report
+- [x] Product CLI wrapper — doctor, validate-data, kappa-sweep, strong-baseline, temporal-baseline, report
 - [x] Editable package metadata — `pip install -e .` exposes `alphadynamics`
 - [x] v1 preprint package prepared — aligned 20+20 NLL and 3+3 rollout audit
+- [x] 3-domain, 3-seed residual baseline sanity check — 9/9 PhaseFlow wins
 - [ ] Remaining N≈50 aligned rerun domains, if raw H5 files are downloaded
-- [ ] Full 40-domain residual/autoregressive MLP audit
+- [ ] Temporal GRU baseline audit on representative 3-domain subset
+- [ ] Full 40-domain temporal GRU baseline audit
 - [ ] Rollout κ calibration sweep
 - [ ] Rollout fidelity without κ-rescaling or honest v1 limitation
 - [ ] Scaling to N=150, N=200 residues

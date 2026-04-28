@@ -132,6 +132,36 @@ def cmd_strong_baseline(args: argparse.Namespace) -> None:
     run_command(cmd, dry_run=args.dry_run)
 
 
+def cmd_temporal_baseline(args: argparse.Namespace) -> None:
+    cmd = [
+        PYTHON, str(ROOT / "src" / "temporal_baseline_audit.py"),
+        "--data_dir", args.data_dir,
+        "--results_dir", args.results_dir,
+        "--out_prefix", args.out_prefix,
+        "--steps", str(args.steps),
+        "--batch", str(args.batch),
+        "--lr", str(args.lr),
+        "--eval_every", str(args.eval_every),
+        "--hidden", str(args.hidden),
+        "--layers", str(args.layers),
+        "--dropout", str(args.dropout),
+        "--n_components", str(args.n_components),
+        "--eval_samples", str(args.eval_samples),
+        "--window", str(args.window),
+        "--device", args.device,
+        "--phaseflow_tmax", *[str(v) for v in args.phaseflow_tmax],
+        "--seeds", *[str(v) for v in args.seeds],
+        "--models", *args.models,
+    ]
+    if args.domains:
+        cmd += ["--domains", *args.domains]
+    if args.max_domains:
+        cmd += ["--max_domains", str(args.max_domains)]
+    if args.allow_legacy_npz:
+        cmd.append("--allow_legacy_npz")
+    run_command(cmd, dry_run=args.dry_run)
+
+
 def scalar_to_str(value: Any) -> str:
     if hasattr(value, "shape") and value.shape == ():
         value = value.item()
@@ -315,6 +345,47 @@ def summarize_strong_baseline(path: Path) -> dict[str, float | int | str]:
     }
 
 
+def summarize_temporal_baseline(path: Path) -> dict[str, float | int | str]:
+    data = json.loads(path.read_text())
+    rows = data.get("results", [])
+    if not rows:
+        return {
+            "name": path.stem,
+            "runs": 0,
+            "pf_gru_wins": 0,
+            "pf_abs_wins": 0,
+            "gru_abs_wins": 0,
+            "abs_mean": 0.0,
+            "gru_mean": 0.0,
+            "pf_mean": 0.0,
+        }
+    abs_nll = []
+    gru_nll = []
+    pf_nll = []
+    for row in rows:
+        models = row["models"]
+        best_pf = min(
+            metrics["nll"]
+            for name, metrics in models.items()
+            if name.startswith("PhaseFlow_t")
+        )
+        abs_value = models["MLP_abs"]["nll"]
+        gru_value = models["TemporalGRU"]["nll"]
+        abs_nll.append(abs_value)
+        gru_nll.append(gru_value)
+        pf_nll.append(best_pf)
+    return {
+        "name": path.stem,
+        "runs": len(rows),
+        "pf_gru_wins": sum(1 for p, g in zip(pf_nll, gru_nll) if p < g),
+        "pf_abs_wins": sum(1 for p, a in zip(pf_nll, abs_nll) if p < a),
+        "gru_abs_wins": sum(1 for g, a in zip(gru_nll, abs_nll) if g < a),
+        "abs_mean": sum(abs_nll) / len(abs_nll),
+        "gru_mean": sum(gru_nll) / len(gru_nll),
+        "pf_mean": sum(pf_nll) / len(pf_nll),
+    }
+
+
 def cmd_report(args: argparse.Namespace) -> None:
     results_dir = Path(args.results_dir)
     lines = [
@@ -384,6 +455,29 @@ def cmd_report(args: argparse.Namespace) -> None:
                 f"{row['pf_abs_wins']}/{row['runs']} | "
                 f"{row['res_abs_wins']}/{row['runs']} | "
                 f"{row['abs_mean']:.3f} | {row['res_mean']:.3f} | "
+                f"{row['pf_mean']:.3f} |"
+            )
+
+    if args.temporal_prefix:
+        lines += [
+            "",
+            "## Temporal Baseline",
+            "",
+            "| Run | Domain-seed runs | PF wins vs temporal GRU | PF wins vs absolute MLP | GRU wins vs absolute MLP | Mean abs MLP NLL | Mean temporal GRU NLL | Mean AD NLL |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for prefix in args.temporal_prefix:
+            path = results_dir / f"{prefix}.json"
+            if not path.exists():
+                lines.append(f"| `{prefix}` | 0 | missing | missing | missing | 0.000 | 0.000 | 0.000 |")
+                continue
+            row = summarize_temporal_baseline(path)
+            lines.append(
+                f"| `{row['name']}` | {row['runs']} | "
+                f"{row['pf_gru_wins']}/{row['runs']} | "
+                f"{row['pf_abs_wins']}/{row['runs']} | "
+                f"{row['gru_abs_wins']}/{row['runs']} | "
+                f"{row['abs_mean']:.3f} | {row['gru_mean']:.3f} | "
                 f"{row['pf_mean']:.3f} |"
             )
 
@@ -481,6 +575,30 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-legacy-npz", action="store_true")
     p.set_defaults(func=cmd_strong_baseline)
 
+    p = sub.add_parser("temporal-baseline", help="Audit against a true temporal GRU context baseline")
+    add_common_io(p)
+    p.add_argument("--data-dir", default=str(ROOT / "mdcath_real_data" / "mdcath_348K"))
+    p.add_argument("--out-prefix", default="temporal_baseline_audit")
+    p.add_argument("--domains", nargs="*", default=None)
+    p.add_argument("--max-domains", type=int, default=0)
+    p.add_argument("--seeds", nargs="+", type=int, default=[42])
+    p.add_argument("--phaseflow-tmax", nargs="+", type=float, default=[4.0])
+    p.add_argument("--window", type=int, default=8)
+    p.add_argument("--steps", type=int, default=4000)
+    p.add_argument("--batch", type=int, default=128)
+    p.add_argument("--lr", type=float, default=2e-3)
+    p.add_argument("--eval-every", type=int, default=0)
+    p.add_argument("--hidden", type=int, default=128)
+    p.add_argument("--layers", type=int, default=1)
+    p.add_argument("--dropout", type=float, default=0.0)
+    p.add_argument("--n-components", type=int, default=8)
+    p.add_argument("--eval-samples", type=int, default=10)
+    p.add_argument("--models", nargs="+", default=["mlp_abs", "temporal_gru", "phaseflow"],
+                   choices=["mlp_abs", "temporal_gru", "phaseflow"])
+    p.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
+    p.add_argument("--allow-legacy-npz", action="store_true")
+    p.set_defaults(func=cmd_temporal_baseline)
+
     p = sub.add_parser("doctor", help="Check environment and shipped result artifacts")
     p.add_argument("--strict", action="store_true", help="Exit non-zero if required checks fail")
     p.set_defaults(func=cmd_doctor)
@@ -503,8 +621,9 @@ def build_parser() -> argparse.ArgumentParser:
         "ramachandran_aligned3_n98_4000step_gpu",
     ])
     p.add_argument("--strong-prefix", nargs="*", default=[
-        "strong_baseline_n48_pilot_500step_earlystop_cuda",
+        "strong_baseline_3dom_3seed_4000step_cuda",
     ])
+    p.add_argument("--temporal-prefix", nargs="*", default=[])
     p.set_defaults(func=cmd_report)
 
     return parser

@@ -58,6 +58,36 @@ class ProductCliTest(unittest.TestCase):
         self.assertEqual(row["pf_abs_wins"], 2)
         self.assertEqual(row["res_abs_wins"], 2)
 
+    def test_temporal_baseline_summarizer_handles_product_payload(self):
+        payload = {
+            "run": {"window": 8},
+            "results": [
+                {
+                    "models": {
+                        "MLP_abs": {"nll": 12.0},
+                        "TemporalGRU": {"nll": 9.0},
+                        "PhaseFlow_t4": {"nll": 7.0},
+                    }
+                },
+                {
+                    "models": {
+                        "MLP_abs": {"nll": 8.0},
+                        "TemporalGRU": {"nll": 6.0},
+                        "PhaseFlow_t4": {"nll": 6.5},
+                    }
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "temporal.json"
+            path.write_text(json.dumps(payload))
+            row = cli.summarize_temporal_baseline(path)
+
+        self.assertEqual(row["runs"], 2)
+        self.assertEqual(row["pf_gru_wins"], 1)
+        self.assertEqual(row["pf_abs_wins"], 2)
+        self.assertEqual(row["gru_abs_wins"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

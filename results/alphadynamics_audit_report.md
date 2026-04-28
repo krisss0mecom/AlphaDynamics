@@ -27,7 +27,7 @@ Generated from existing JSON result files.
 
 | Run | Domain-seed runs | PF wins vs residual MLP | PF wins vs absolute MLP | Residual wins vs absolute MLP | Mean abs MLP NLL | Mean residual MLP NLL | Mean AD NLL |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `strong_baseline_n48_pilot_500step_earlystop_cuda` | 3 | 2/3 | 1/3 | 1/3 | 62.414 | 69.600 | 62.673 |
+| `strong_baseline_3dom_3seed_4000step_cuda` | 9 | 9/9 | 9/9 | 2/9 | 191.241 | 208.782 | 64.603 |
 
 ## Product Readiness
 

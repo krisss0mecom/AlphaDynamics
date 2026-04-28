@@ -60,6 +60,7 @@ py-modules = [
   "ramachandran_energy_v2",
   "rollout_eval",
   "strong_baseline_audit",
+  "temporal_baseline_audit",
   "train_chain",
   "train_real",
 ]
