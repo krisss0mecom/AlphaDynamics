@@ -15,14 +15,18 @@ Device: cuda
 | 1lwjA03 | 44 | 48 | 25.0 | 154.383 | 332.968 | 32.462 | PhaseFlow_t4 | **PhaseFlow_t4** | -300.506 |
 | 1kwgA03 | 42 | 48 | 25.0 | 95.447 | 246.188 | 22.225 | PhaseFlow_t4 | **PhaseFlow_t4** | -223.963 |
 | 1kwgA03 | 43 | 48 | 25.0 | 75.001 | 202.182 | 21.270 | PhaseFlow_t4 | **PhaseFlow_t4** | -180.911 |
+| 1kwgA03 | 44 | 48 | 25.0 | 91.039 | 220.084 | 21.620 | PhaseFlow_t4 | **PhaseFlow_t4** | -198.464 |
+| 1vq8L01 | 42 | 48 | 54.5 | 259.967 | 393.371 | 140.392 | PhaseFlow_t4 | **PhaseFlow_t4** | -252.979 |
+| 1vq8L01 | 43 | 48 | 54.5 | 311.903 | 506.023 | 139.563 | PhaseFlow_t4 | **PhaseFlow_t4** | -366.460 |
+| 1vq8L01 | 44 | 48 | 54.5 | 265.554 | 669.895 | 139.365 | PhaseFlow_t4 | **PhaseFlow_t4** | -530.530 |
 
 ## Summary
-- PhaseFlow wins vs temporal GRU: **5/5** domain-seed runs.
-- PhaseFlow wins vs absolute MLP: **5/5** domain-seed runs.
-- Temporal GRU improves over absolute MLP: **0/5** domain-seed runs.
-- Mean MLP abs NLL: 119.925
-- Mean temporal GRU NLL: 260.671
-- Mean best PhaseFlow NLL: 27.063
-- Mean ΔNLL PhaseFlow-GRU: -233.608 nats (negative favors PhaseFlow).
-- Mean ΔNLL PhaseFlow-absolute: -92.862 nats (negative favors PhaseFlow).
-- Mean ΔNLL GRU-absolute: +140.747 nats (negative favors GRU).
+- PhaseFlow wins vs temporal GRU: **9/9** domain-seed runs.
+- PhaseFlow wins vs absolute MLP: **9/9** domain-seed runs.
+- Temporal GRU improves over absolute MLP: **0/9** domain-seed runs.
+- Mean MLP abs NLL: 169.787
+- Mean temporal GRU NLL: 343.637
+- Mean best PhaseFlow NLL: 64.028
+- Mean ΔNLL PhaseFlow-GRU: -279.608 nats (negative favors PhaseFlow).
+- Mean ΔNLL PhaseFlow-absolute: -105.759 nats (negative favors PhaseFlow).
+- Mean ΔNLL GRU-absolute: +173.849 nats (negative favors GRU).

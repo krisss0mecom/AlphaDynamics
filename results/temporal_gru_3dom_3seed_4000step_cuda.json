@@ -256,6 +256,190 @@
           "time_sec": 244.60962104797363
         }
       }
+    },
+    {
+      "domain_id": "1kwgA03",
+      "source_file": "mdcath_real_data/mdcath_348K/1kwgA03_dihedrals.npz",
+      "seed": 44,
+      "N": 48,
+      "identity_deg": 24.974776237901093,
+      "train_size": 1768,
+      "val_size": 442,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 91.0387954711914,
+          "selected_step": 4000,
+          "best_nll": 91.0387954711914,
+          "last_eval_nll": 91.0387954711914,
+          "eval_every": 0,
+          "mode_deg": 22.76688343774862,
+          "best_of_samples_deg": 24.066887002855488,
+          "params": 389000,
+          "time_sec": 63.12260937690735
+        },
+        "TemporalGRU": {
+          "nll": 220.0842742919922,
+          "selected_step": 4000,
+          "best_nll": 220.0842742919922,
+          "last_eval_nll": 220.0842742919922,
+          "eval_every": 0,
+          "mode_deg": 23.268642794556097,
+          "best_of_samples_deg": 24.461924653881514,
+          "params": 454920,
+          "time_sec": 67.04293251037598
+        },
+        "PhaseFlow_t4": {
+          "nll": 21.61994171142578,
+          "selected_step": 4000,
+          "best_nll": 21.61994171142578,
+          "last_eval_nll": 21.61994171142578,
+          "eval_every": 0,
+          "mode_deg": 26.4116602090696,
+          "best_of_samples_deg": 26.871972270446147,
+          "params": 341705,
+          "time_sec": 193.25764441490173
+        }
+      }
+    },
+    {
+      "domain_id": "1vq8L01",
+      "source_file": "mdcath_real_data/mdcath_348K/1vq8L01_dihedrals.npz",
+      "seed": 42,
+      "N": 48,
+      "identity_deg": 54.515028501957126,
+      "train_size": 1792,
+      "val_size": 448,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 259.96722412109375,
+          "selected_step": 4000,
+          "best_nll": 259.96722412109375,
+          "last_eval_nll": 259.96722412109375,
+          "eval_every": 0,
+          "mode_deg": 78.31356249496469,
+          "best_of_samples_deg": 76.06546037116836,
+          "params": 389000,
+          "time_sec": 66.5433886051178
+        },
+        "TemporalGRU": {
+          "nll": 393.3711242675781,
+          "selected_step": 4000,
+          "best_nll": 393.3711242675781,
+          "last_eval_nll": 393.3711242675781,
+          "eval_every": 0,
+          "mode_deg": 74.89492304177908,
+          "best_of_samples_deg": 74.68382921529066,
+          "params": 454920,
+          "time_sec": 68.87755084037781
+        },
+        "PhaseFlow_t4": {
+          "nll": 140.39187622070312,
+          "selected_step": 4000,
+          "best_nll": 140.39187622070312,
+          "last_eval_nll": 140.39187622070312,
+          "eval_every": 0,
+          "mode_deg": 73.32347409867756,
+          "best_of_samples_deg": 76.82475884082034,
+          "params": 341705,
+          "time_sec": 189.09044003486633
+        }
+      }
+    },
+    {
+      "domain_id": "1vq8L01",
+      "source_file": "mdcath_real_data/mdcath_348K/1vq8L01_dihedrals.npz",
+      "seed": 43,
+      "N": 48,
+      "identity_deg": 54.515028501957126,
+      "train_size": 1792,
+      "val_size": 448,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 311.90277099609375,
+          "selected_step": 4000,
+          "best_nll": 311.90277099609375,
+          "last_eval_nll": 311.90277099609375,
+          "eval_every": 0,
+          "mode_deg": 75.36019552804035,
+          "best_of_samples_deg": 75.32308711027967,
+          "params": 389000,
+          "time_sec": 65.01262521743774
+        },
+        "TemporalGRU": {
+          "nll": 506.02313232421875,
+          "selected_step": 4000,
+          "best_nll": 506.02313232421875,
+          "last_eval_nll": 506.02313232421875,
+          "eval_every": 0,
+          "mode_deg": 75.87691299913016,
+          "best_of_samples_deg": 74.76209635298984,
+          "params": 454920,
+          "time_sec": 70.05332064628601
+        },
+        "PhaseFlow_t4": {
+          "nll": 139.56263732910156,
+          "selected_step": 4000,
+          "best_nll": 139.56263732910156,
+          "last_eval_nll": 139.56263732910156,
+          "eval_every": 0,
+          "mode_deg": 73.80408035962552,
+          "best_of_samples_deg": 77.49371439832055,
+          "params": 341705,
+          "time_sec": 190.8529167175293
+        }
+      }
+    },
+    {
+      "domain_id": "1vq8L01",
+      "source_file": "mdcath_real_data/mdcath_348K/1vq8L01_dihedrals.npz",
+      "seed": 44,
+      "N": 48,
+      "identity_deg": 54.515028501957126,
+      "train_size": 1792,
+      "val_size": 448,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 265.55377197265625,
+          "selected_step": 4000,
+          "best_nll": 265.55377197265625,
+          "last_eval_nll": 265.55377197265625,
+          "eval_every": 0,
+          "mode_deg": 75.34483443259698,
+          "best_of_samples_deg": 74.7045724998,
+          "params": 389000,
+          "time_sec": 66.58757376670837
+        },
+        "TemporalGRU": {
+          "nll": 669.8952026367188,
+          "selected_step": 4000,
+          "best_nll": 669.8952026367188,
+          "last_eval_nll": 669.8952026367188,
+          "eval_every": 0,
+          "mode_deg": 77.96160284703393,
+          "best_of_samples_deg": 75.10912460433985,
+          "params": 454920,
+          "time_sec": 69.8583836555481
+        },
+        "PhaseFlow_t4": {
+          "nll": 139.36474609375,
+          "selected_step": 4000,
+          "best_nll": 139.36474609375,
+          "last_eval_nll": 139.36474609375,
+          "eval_every": 0,
+          "mode_deg": 71.43637479327307,
+          "best_of_samples_deg": 77.4935436435913,
+          "params": 341705,
+          "time_sec": 187.80999660491943
+        }
+      }
     }
   ]
 }

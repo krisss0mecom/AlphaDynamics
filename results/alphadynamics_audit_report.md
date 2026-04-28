@@ -29,6 +29,12 @@ Generated from existing JSON result files.
 |---|---:|---:|---:|---:|---:|---:|---:|
 | `strong_baseline_3dom_3seed_4000step_cuda` | 9 | 9/9 | 9/9 | 2/9 | 191.241 | 208.782 | 64.603 |
 
+## Temporal Baseline
+
+| Run | Domain-seed runs | PF wins vs temporal GRU | PF wins vs absolute MLP | GRU wins vs absolute MLP | Mean abs MLP NLL | Mean temporal GRU NLL | Mean AD NLL |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `temporal_gru_3dom_3seed_4000step_cuda` | 9 | 9/9 | 9/9 | 0/9 | 169.787 | 343.637 | 64.028 |
+
 ## Product Readiness
 
 - Reproducible command surface: `alphadynamics` / `python src/alphadynamics_cli.py`.
