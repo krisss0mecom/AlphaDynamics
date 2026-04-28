@@ -4,10 +4,26 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![License: CC BY 4.0](https://img.shields.io/badge/Manuscript-CC--BY--4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-Per-system neural propagator for molecular dynamics emulation on the protein
-torsion torus T^N.
-Input: current protein conformation (dihedral angles φ, ψ per residue).
-Output: probability distribution over the next frame's conformation.
+**Compact per-system neural surrogate for protein torsion dynamics.**
+
+AlphaDynamics trains a small phase-flow model for one protein/domain from seed
+MD and predicts the next-step distribution over backbone torsion angles. In the
+current aligned mdCATH audit, it beats a matched MLP baseline on **40/40
+domains** and produces stable 2500-step torsion rollouts.
+
+![Aligned mdCATH NLL audit: AlphaDynamics vs MLP](paper/figures/fig1_scatter.png)
+
+## 30-second summary
+
+- **Task:** learn a per-protein molecular-dynamics surrogate in φ/ψ torsion space.
+- **Model:** coupled phase oscillators + neural ODE + mixture-of-von-Mises head.
+- **Main result:** 20/20 wins at N=48 and 20/20 wins at N=98 against a matched MLP.
+- **Rollout audit:** six 2500-step rollouts with Ramachandran free-energy metrics.
+- **Scope:** per-system surrogate trained from seed MD, not a zero-shot sequence-to-dynamics model.
+
+Why this may be useful: most protein-dynamics ML work focuses on large
+transferable Cartesian models. AlphaDynamics tests a smaller complementary
+route: a torus-native specialist model for one protein at a time.
 
 **Author:** Krzysztof Gwozdz
 **Started:** 2026-04-14
@@ -226,13 +242,24 @@ python src/ramachandran_energy_v2.py
 The product wrapper keeps the audited scripts behind one command surface:
 
 ```bash
+# Optional editable install gives the `alphadynamics` command
+pip install -e .
+
+# Check environment, dependencies, CUDA, and shipped audit artifacts
+alphadynamics doctor
+
+# Validate the aligned torsion data contract
+alphadynamics validate-data \
+  --data-dir mdcath_real_data/mdcath_348K \
+  --strict
+
 # Convert mdCATH H5 files to aligned torsion npz
-python src/alphadynamics_cli.py convert \
+alphadynamics convert \
   --bench-dir mdcath_raw \
   --out-dir mdcath_real_data/mdcath_348K
 
 # Train/evaluate the one-step NLL benchmark
-python src/alphadynamics_cli.py train \
+alphadynamics train \
   --data-dir mdcath_real_data/mdcath_348K \
   --out-prefix mdcath_aligned20_4000step_cpu \
   --steps 4000 \
@@ -240,7 +267,7 @@ python src/alphadynamics_cli.py train \
   --device auto
 
 # Train rollout model and evaluate Ramachandran free-energy fidelity
-python src/alphadynamics_cli.py rollout \
+alphadynamics rollout \
   --data-dir mdcath_real_data/mdcath_alltemps \
   --out-prefix ramachandran_aligned3_4000step_gpu \
   --domains 1lwjA03 1kwgA03 1vq8L01 \
@@ -248,13 +275,33 @@ python src/alphadynamics_cli.py rollout \
   --batch 512 \
   --device auto
 
+# Extend rollout research with a kappa calibration sweep
+alphadynamics kappa-sweep \
+  --data-dir mdcath_real_data/mdcath_alltemps \
+  --out-prefix kappa_sweep_n48 \
+  --domains 1lwjA03 1kwgA03 1vq8L01 \
+  --kappa-mult 1 5 10 20 30 50 \
+  --device auto
+
+# Audit against a stronger residual/autoregressive MLP baseline
+alphadynamics strong-baseline \
+  --data-dir mdcath_real_data/mdcath_348K \
+  --out-prefix strong_baseline_audit \
+  --steps 4000 \
+  --batch 256 \
+  --seeds 42 43 44 \
+  --device auto
+
 # Build compact Markdown summary from existing JSON result files
-python src/alphadynamics_cli.py report \
+alphadynamics report \
   --output results/alphadynamics_audit_report.md
 ```
 
 Every execution subcommand supports `--dry-run` to print the underlying audited
 script call before launching a long job.
+
+The productization plan and research expansion ladder are documented in
+[docs/PRODUCT_V1_2026_04_28.md](docs/PRODUCT_V1_2026_04_28.md).
 
 ## Related work
 
@@ -284,8 +331,12 @@ of torus dynamics** with minimal parameters and ODE-based inductive bias.
 - [x] Aligned N=98 rollout audit — 3 domains, comparable fidelity to N=48
 - [x] Converter fixed to align φ/ψ by residue index
 - [x] CLI MVP wrapper — convert, train, rollout, report
+- [x] Product CLI wrapper — doctor, validate-data, kappa-sweep, strong-baseline, report
+- [x] Editable package metadata — `pip install -e .` exposes `alphadynamics`
 - [x] v1 preprint package prepared — aligned 20+20 NLL and 3+3 rollout audit
 - [ ] Remaining N≈50 aligned rerun domains, if raw H5 files are downloaded
+- [ ] Full 40-domain residual/autoregressive MLP audit
+- [ ] Rollout κ calibration sweep
 - [ ] Rollout fidelity without κ-rescaling or honest v1 limitation
 - [ ] Scaling to N=150, N=200 residues
 - [ ] Direct head-to-head vs Timewarp, AlphaFlow, bioEmu

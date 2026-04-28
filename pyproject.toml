@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alphadynamics"
+version = "0.1.0"
+description = "Per-system phase-flow surrogate for protein torsion dynamics"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+  { name = "Krzysztof Gwozdz" }
+]
+keywords = [
+  "molecular-dynamics",
+  "protein-dynamics",
+  "torsion",
+  "neural-ode",
+  "phase-oscillators",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "torch>=2.0",
+  "torchdiffeq>=0.2.5",
+  "numpy<2",
+  "scipy",
+  "mdtraj",
+  "h5py",
+  "huggingface_hub",
+  "matplotlib",
+]
+
+[project.urls]
+Homepage = "https://github.com/krisss0mecom/AlphaDynamics"
+Repository = "https://github.com/krisss0mecom/AlphaDynamics"
+DOI = "https://doi.org/10.5281/zenodo.19791327"
+
+[project.scripts]
+alphadynamics = "alphadynamics_cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+py-modules = [
+  "alphadynamics_cli",
+  "chain_md",
+  "chain_model",
+  "mdcath_benchmark",
+  "mdcath_convert_alltemps",
+  "mdcath_convert_v3",
+  "ramachandran_energy_v2",
+  "rollout_eval",
+  "strong_baseline_audit",
+  "train_chain",
+  "train_real",
+]
