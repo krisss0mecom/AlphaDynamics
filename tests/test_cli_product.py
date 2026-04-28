@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 import alphadynamics_cli as cli
+import timewarp_comparison as twc
 
 
 class ProductCliTest(unittest.TestCase):
@@ -87,6 +88,17 @@ class ProductCliTest(unittest.TestCase):
         self.assertEqual(row["pf_gru_wins"], 1)
         self.assertEqual(row["pf_abs_wins"], 2)
         self.assertEqual(row["gru_abs_wins"], 2)
+
+    def test_timewarp_path_helpers(self):
+        self.assertEqual(
+            twc.arrays_path("4AA-large", "test", "AAEW"),
+            "4AA-large/test/AAEW-traj-arrays.npz",
+        )
+        self.assertEqual(
+            twc.pdb_path("4AA-large", "test", "AAEW"),
+            "4AA-large/test/AAEW-traj-state0.pdb",
+        )
+        self.assertEqual(twc.domain_id_from_arrays_path("4AA-large/test/AAEW-traj-arrays.npz"), "AAEW")
 
 
 if __name__ == "__main__":

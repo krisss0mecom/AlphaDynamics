@@ -162,6 +162,35 @@ def cmd_temporal_baseline(args: argparse.Namespace) -> None:
     run_command(cmd, dry_run=args.dry_run)
 
 
+def cmd_timewarp_comparison(args: argparse.Namespace) -> None:
+    cmd = [
+        PYTHON, str(ROOT / "src" / "timewarp_comparison.py"),
+        args.action,
+        "--dataset", args.dataset,
+        "--split", args.split,
+    ]
+    if args.action == "list":
+        cmd += ["--limit", str(args.limit)]
+    if args.action in {"plan", "convert"}:
+        cmd += ["--max-domains", str(args.max_domains)]
+    if args.domains:
+        cmd += ["--domains", *args.domains]
+    if args.action == "convert":
+        cmd += [
+            "--out-dir", args.out_dir,
+            "--max-frames", str(args.max_frames),
+            "--stride", str(args.stride),
+            "--train-frac", str(args.train_frac),
+        ]
+        if args.cache_dir:
+            cmd += ["--cache-dir", args.cache_dir]
+        if args.local_dir:
+            cmd += ["--local-dir", args.local_dir]
+        if args.dry_run:
+            cmd.append("--dry-run")
+    run_command(cmd, dry_run=False)
+
+
 def scalar_to_str(value: Any) -> str:
     if hasattr(value, "shape") and value.shape == ():
         value = value.item()
@@ -598,6 +627,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
     p.add_argument("--allow-legacy-npz", action="store_true")
     p.set_defaults(func=cmd_temporal_baseline)
+
+    p = sub.add_parser("timewarp-comparison", help="Prepare a small Timewarp dataset torsion comparison")
+    p.add_argument("action", choices=["list", "plan", "convert"])
+    p.add_argument("--dataset", default="4AA-large")
+    p.add_argument("--split", default="test")
+    p.add_argument("--domains", nargs="*", default=None)
+    p.add_argument("--max-domains", type=int, default=3)
+    p.add_argument("--limit", type=int, default=20)
+    p.add_argument("--out-dir", default=str(ROOT / "timewarp_real_data" / "4AA-large_test"))
+    p.add_argument("--cache-dir", default=None)
+    p.add_argument("--local-dir", default=None)
+    p.add_argument("--max-frames", type=int, default=2500)
+    p.add_argument("--stride", type=int, default=1)
+    p.add_argument("--train-frac", type=float, default=0.8)
+    p.add_argument("--dry-run", action="store_true")
+    p.set_defaults(func=cmd_timewarp_comparison)
 
     p = sub.add_parser("doctor", help="Check environment and shipped result artifacts")
     p.add_argument("--strict", action="store_true", help="Exit non-zero if required checks fail")

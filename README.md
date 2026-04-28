@@ -304,6 +304,19 @@ alphadynamics temporal-baseline \
   --phaseflow-tmax 4 \
   --device auto
 
+# Prepare a small shared-dataset audit on Microsoft's public Timewarp data
+alphadynamics timewarp-comparison list \
+  --dataset 4AA-large \
+  --split test \
+  --limit 10
+
+alphadynamics timewarp-comparison convert \
+  --dataset 4AA-large \
+  --split test \
+  --max-domains 3 \
+  --max-frames 2500 \
+  --out-dir timewarp_real_data/4AA-large_test
+
 # Build compact Markdown summary from existing JSON result files
 alphadynamics report \
   --output results/alphadynamics_audit_report.md
@@ -345,12 +358,13 @@ of torus dynamics** with minimal parameters and ODE-based inductive bias.
 - [x] Aligned N=98 rollout audit — 3 domains, comparable fidelity to N=48
 - [x] Converter fixed to align φ/ψ by residue index
 - [x] CLI MVP wrapper — convert, train, rollout, report
-- [x] Product CLI wrapper — doctor, validate-data, kappa-sweep, strong-baseline, temporal-baseline, report
+- [x] Product CLI wrapper — doctor, validate-data, kappa-sweep, strong-baseline, temporal-baseline, timewarp-comparison, report
 - [x] Editable package metadata — `pip install -e .` exposes `alphadynamics`
 - [x] v1 preprint package prepared — aligned 20+20 NLL and 3+3 rollout audit
 - [x] 3-domain, 3-seed residual baseline sanity check — 9/9 PhaseFlow wins
 - [ ] Remaining N≈50 aligned rerun domains, if raw H5 files are downloaded
 - [ ] Temporal GRU baseline audit on representative 3-domain subset
+- [ ] AlphaDynamics shared-dataset audit on public Timewarp tetrapeptides
 - [ ] Full 40-domain temporal GRU baseline audit
 - [ ] Rollout κ calibration sweep
 - [ ] Rollout fidelity without κ-rescaling or honest v1 limitation

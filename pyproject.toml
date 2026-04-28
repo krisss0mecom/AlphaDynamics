@@ -61,6 +61,7 @@ py-modules = [
   "rollout_eval",
   "strong_baseline_audit",
   "temporal_baseline_audit",
+  "timewarp_comparison",
   "train_chain",
   "train_real",
 ]

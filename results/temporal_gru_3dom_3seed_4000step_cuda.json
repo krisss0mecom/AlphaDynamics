@@ -1,0 +1,261 @@
+{
+  "run": {
+    "data_dir": "mdcath_real_data/mdcath_348K",
+    "steps": 4000,
+    "batch": 128,
+    "lr": 0.002,
+    "eval_every": 0,
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "phaseflow_tmax": [
+      4.0
+    ],
+    "window": 8,
+    "hidden": 128,
+    "layers": 1,
+    "dropout": 0.0,
+    "n_components": 8,
+    "eval_samples": 10,
+    "models": [
+      "mlp_abs",
+      "temporal_gru",
+      "phaseflow"
+    ],
+    "device": "cuda"
+  },
+  "results": [
+    {
+      "domain_id": "1lwjA03",
+      "source_file": "mdcath_real_data/mdcath_348K/1lwjA03_dihedrals.npz",
+      "seed": 42,
+      "N": 48,
+      "identity_deg": 24.993210918470957,
+      "train_size": 1784,
+      "val_size": 446,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 147.80450439453125,
+          "selected_step": 4000,
+          "best_nll": 147.80450439453125,
+          "last_eval_nll": 147.80450439453125,
+          "eval_every": 0,
+          "mode_deg": 22.998401237402664,
+          "best_of_samples_deg": 25.201403622109407,
+          "params": 389000,
+          "time_sec": 63.84853148460388
+        },
+        "TemporalGRU": {
+          "nll": 288.89398193359375,
+          "selected_step": 4000,
+          "best_nll": 288.89398193359375,
+          "last_eval_nll": 288.89398193359375,
+          "eval_every": 0,
+          "mode_deg": 24.67960961291899,
+          "best_of_samples_deg": 25.65539092831452,
+          "params": 454920,
+          "time_sec": 65.69651389122009
+        },
+        "PhaseFlow_t4": {
+          "nll": 28.008359909057617,
+          "selected_step": 4000,
+          "best_nll": 28.008359909057617,
+          "last_eval_nll": 28.008359909057617,
+          "eval_every": 0,
+          "mode_deg": 21.78033262157927,
+          "best_of_samples_deg": 26.11702633884276,
+          "params": 341705,
+          "time_sec": 201.66560101509094
+        }
+      }
+    },
+    {
+      "domain_id": "1lwjA03",
+      "source_file": "mdcath_real_data/mdcath_348K/1lwjA03_dihedrals.npz",
+      "seed": 43,
+      "N": 48,
+      "identity_deg": 24.993210918470957,
+      "train_size": 1784,
+      "val_size": 446,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 126.98804473876953,
+          "selected_step": 4000,
+          "best_nll": 126.98804473876953,
+          "last_eval_nll": 126.98804473876953,
+          "eval_every": 0,
+          "mode_deg": 22.544772516128976,
+          "best_of_samples_deg": 24.669104781975513,
+          "params": 389000,
+          "time_sec": 66.57092523574829
+        },
+        "TemporalGRU": {
+          "nll": 233.12423706054688,
+          "selected_step": 4000,
+          "best_nll": 233.12423706054688,
+          "last_eval_nll": 233.12423706054688,
+          "eval_every": 0,
+          "mode_deg": 23.861496384324035,
+          "best_of_samples_deg": 25.153802326236296,
+          "params": 454920,
+          "time_sec": 69.61243510246277
+        },
+        "PhaseFlow_t4": {
+          "nll": 31.34871482849121,
+          "selected_step": 4000,
+          "best_nll": 31.34871482849121,
+          "last_eval_nll": 31.34871482849121,
+          "eval_every": 0,
+          "mode_deg": 21.535185179436464,
+          "best_of_samples_deg": 26.01377095406509,
+          "params": 341705,
+          "time_sec": 192.85037803649902
+        }
+      }
+    },
+    {
+      "domain_id": "1lwjA03",
+      "source_file": "mdcath_real_data/mdcath_348K/1lwjA03_dihedrals.npz",
+      "seed": 44,
+      "N": 48,
+      "identity_deg": 24.993210918470957,
+      "train_size": 1784,
+      "val_size": 446,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 154.3827667236328,
+          "selected_step": 4000,
+          "best_nll": 154.3827667236328,
+          "last_eval_nll": 154.3827667236328,
+          "eval_every": 0,
+          "mode_deg": 23.042824787764427,
+          "best_of_samples_deg": 25.476656830566338,
+          "params": 389000,
+          "time_sec": 66.7108850479126
+        },
+        "TemporalGRU": {
+          "nll": 332.9678039550781,
+          "selected_step": 4000,
+          "best_nll": 332.9678039550781,
+          "last_eval_nll": 332.9678039550781,
+          "eval_every": 0,
+          "mode_deg": 24.617518070721697,
+          "best_of_samples_deg": 25.497630633960153,
+          "params": 454920,
+          "time_sec": 69.68420267105103
+        },
+        "PhaseFlow_t4": {
+          "nll": 32.461570739746094,
+          "selected_step": 4000,
+          "best_nll": 32.461570739746094,
+          "last_eval_nll": 32.461570739746094,
+          "eval_every": 0,
+          "mode_deg": 21.788274424036704,
+          "best_of_samples_deg": 26.625095082896035,
+          "params": 341705,
+          "time_sec": 203.29250693321228
+        }
+      }
+    },
+    {
+      "domain_id": "1kwgA03",
+      "source_file": "mdcath_real_data/mdcath_348K/1kwgA03_dihedrals.npz",
+      "seed": 42,
+      "N": 48,
+      "identity_deg": 24.974776237901093,
+      "train_size": 1768,
+      "val_size": 442,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 95.44668579101562,
+          "selected_step": 4000,
+          "best_nll": 95.44668579101562,
+          "last_eval_nll": 95.44668579101562,
+          "eval_every": 0,
+          "mode_deg": 22.92241196779169,
+          "best_of_samples_deg": 23.954851409899767,
+          "params": 389000,
+          "time_sec": 66.3969087600708
+        },
+        "TemporalGRU": {
+          "nll": 246.1884307861328,
+          "selected_step": 4000,
+          "best_nll": 246.1884307861328,
+          "last_eval_nll": 246.1884307861328,
+          "eval_every": 0,
+          "mode_deg": 24.35924471254142,
+          "best_of_samples_deg": 24.71033180380571,
+          "params": 454920,
+          "time_sec": 68.81395077705383
+        },
+        "PhaseFlow_t4": {
+          "nll": 22.225271224975586,
+          "selected_step": 4000,
+          "best_nll": 22.225271224975586,
+          "last_eval_nll": 22.225271224975586,
+          "eval_every": 0,
+          "mode_deg": 24.48538293858592,
+          "best_of_samples_deg": 27.022166422747436,
+          "params": 341705,
+          "time_sec": 204.0524537563324
+        }
+      }
+    },
+    {
+      "domain_id": "1kwgA03",
+      "source_file": "mdcath_real_data/mdcath_348K/1kwgA03_dihedrals.npz",
+      "seed": 43,
+      "N": 48,
+      "identity_deg": 24.974776237901093,
+      "train_size": 1768,
+      "val_size": 442,
+      "window": 8,
+      "alignment": "common_residue_index",
+      "models": {
+        "MLP_abs": {
+          "nll": 75.00104522705078,
+          "selected_step": 4000,
+          "best_nll": 75.00104522705078,
+          "last_eval_nll": 75.00104522705078,
+          "eval_every": 0,
+          "mode_deg": 22.650368948244665,
+          "best_of_samples_deg": 23.84905690229815,
+          "params": 389000,
+          "time_sec": 66.07056546211243
+        },
+        "TemporalGRU": {
+          "nll": 202.18161010742188,
+          "selected_step": 4000,
+          "best_nll": 202.18161010742188,
+          "last_eval_nll": 202.18161010742188,
+          "eval_every": 0,
+          "mode_deg": 24.34206166413696,
+          "best_of_samples_deg": 24.613664136482516,
+          "params": 454920,
+          "time_sec": 67.43613886833191
+        },
+        "PhaseFlow_t4": {
+          "nll": 21.270435333251953,
+          "selected_step": 4000,
+          "best_nll": 21.270435333251953,
+          "last_eval_nll": 21.270435333251953,
+          "eval_every": 0,
+          "mode_deg": 24.48225471194606,
+          "best_of_samples_deg": 26.892041073774937,
+          "params": 341705,
+          "time_sec": 244.60962104797363
+        }
+      }
+    }
+  ]
+}

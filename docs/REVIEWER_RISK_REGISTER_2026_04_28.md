@@ -19,7 +19,7 @@ yet a reviewer-proof v2 paper package.
 | MLP baseline is weak | 40/40 wins vs matched absolute MLP; 9/9 wins vs residual MLP on 3 domains x 3 seeds | residual MLP is still pointwise and not a true temporal model | run `alphadynamics temporal-baseline` with an 8-frame GRU context |
 | Single seed | v1 full audit uses seed 42; 3-domain subset now has 3 seeds | not yet 3 seeds on all 40 domains | run seed sweep on representative subset first, then all 40 if stable |
 | `kappa x30` rollout heuristic | six rollout audits are stable and reported honestly | calibration is not learned or swept | run `alphadynamics kappa-sweep` across fixed multipliers and report global/per-domain optimum |
-| No head-to-head with Timewarp/bioEmu | paper explicitly scopes itself as per-system, not zero-shot | no shared-task external baseline | add adapter only when the evaluation task is apples-to-apples |
+| No head-to-head with Timewarp/bioEmu | paper explicitly scopes itself as per-system, not zero-shot | no shared-task external baseline | run `alphadynamics timewarp-comparison` on Timewarp tetrapeptide data; keep bioEmu/AlphaFlow as equilibrium-only comparisons |
 | Rollout audit has six domains | 3 N=48 + 3 N=98 rollout audits | too small for broad claims | expand rollout audit after kappa sweep, prioritizing ordered and high-entropy domains |
 | Missing ablations | architecture is described but not decomposed | no clean contribution breakdown | add ablations: no ODE, no coupling, no phase gate, MLP head-only, different `t_max` |
 | CNOT framing may distract | prior phase-gate work motivates the coupling | reviewers may see it as oversold | keep CNOT as inspiration, but make the paper's main claim empirical and torsion-native |
@@ -50,6 +50,24 @@ alphadynamics kappa-sweep \
   --out-prefix kappa_sweep_n48 \
   --domains 1lwjA03 1kwgA03 1vq8L01 \
   --kappa-mult 1 5 10 20 30 50 \
+  --device auto
+```
+
+Timewarp shared-dataset audit scaffold:
+
+```bash
+alphadynamics timewarp-comparison convert \
+  --dataset 4AA-large \
+  --split test \
+  --max-domains 3 \
+  --max-frames 2500 \
+  --out-dir timewarp_real_data/4AA-large_test
+
+alphadynamics train \
+  --data-dir timewarp_real_data/4AA-large_test \
+  --out-prefix timewarp_4aa_large_test3_nll \
+  --steps 4000 \
+  --batch 512 \
   --device auto
 ```
 
