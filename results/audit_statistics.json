@@ -1,0 +1,65 @@
+{
+  "timestamp": "2026-04-28T20:33:35.962656+00:00",
+  "per_size_class": [
+    {
+      "label": "N=48 aligned (20 domains)",
+      "n_domains": 20,
+      "mean_nll_MLP": 871.8054397583007,
+      "mean_nll_PhaseFlow_t4": 113.84822273254395,
+      "ratio_of_means": 7.657611325267459,
+      "ratio_ci_95": [
+        6.130429971055164,
+        9.844748534160995
+      ],
+      "geometric_mean_per_domain_ratio": 7.43626000077926,
+      "wins_PhaseFlow_t4": 20,
+      "wilcoxon_W": 0.0,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "sign_test_p": 1.9073486328125e-06,
+      "paired_t_log_stat": 20.004008416026394,
+      "paired_t_log_p": 3.173181274456729e-14,
+      "log_diff_mean": 2.006368034387692,
+      "log_diff_std": 0.44854763300131534
+    },
+    {
+      "label": "N=98 aligned (20 domains)",
+      "n_domains": 20,
+      "mean_nll_MLP": 519.4918258666992,
+      "mean_nll_PhaseFlow_t4": 102.17299375534057,
+      "ratio_of_means": 5.084433829066944,
+      "ratio_ci_95": [
+        4.558171998741184,
+        5.8673186363402605
+      ],
+      "geometric_mean_per_domain_ratio": 5.454100082533579,
+      "wins_PhaseFlow_t4": 20,
+      "wilcoxon_W": 0.0,
+      "wilcoxon_p": 1.9073486328125e-06,
+      "sign_test_p": 1.9073486328125e-06,
+      "paired_t_log_stat": 25.36265603428927,
+      "paired_t_log_p": 4.082487004928266e-16,
+      "log_diff_mean": 1.6963676345545515,
+      "log_diff_std": 0.29911641277366663
+    }
+  ],
+  "combined": {
+    "label": "Combined aligned audit (40 domains)",
+    "n_domains": 40,
+    "mean_nll_MLP": 695.6486328125,
+    "mean_nll_PhaseFlow_t4": 108.01060824394226,
+    "ratio_of_means": 6.440558424051974,
+    "ratio_ci_95": [
+      5.4538999785008295,
+      7.749624521152502
+    ],
+    "geometric_mean_per_domain_ratio": 6.368524655207934,
+    "wins_PhaseFlow_t4": 40,
+    "wilcoxon_W": 0.0,
+    "wilcoxon_p": 1.8189894035458565e-12,
+    "sign_test_p": 1.8189894035458565e-12,
+    "paired_t_log_stat": 28.717409734773216,
+    "paired_t_log_p": 7.584776787426629e-28,
+    "log_diff_mean": 1.851367834471122,
+    "log_diff_std": 0.4077344856498822
+  }
+}

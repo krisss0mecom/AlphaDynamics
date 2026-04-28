@@ -10,6 +10,7 @@ __pycache__/
 !paper/figures/fig*.png
 !paper/figures/ramachandran_aligned3_4000step_gpu_*.png
 !paper/figures/ramachandran_aligned3_n98_4000step_gpu_*.png
+!paper/figures/head_to_head_4aa_alphadynamics_rollout_*.png
 runs/
 real_data/
 data/mdcath/

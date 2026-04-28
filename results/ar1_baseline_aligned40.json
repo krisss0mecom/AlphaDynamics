@@ -1,0 +1,231 @@
+{
+  "experiment": "ar1_baseline_aligned",
+  "timestamp": "2026-04-28T21:42:55.790280+00:00",
+  "data_dir": "/workspace/AlphaDynamics/mdcath_real_data/mdcath_348K",
+  "steps": 4000,
+  "lr": 0.02,
+  "device": "cuda",
+  "n_domains": 20,
+  "results": [
+    {
+      "domain_id": "1a92A00",
+      "N": 48,
+      "identity_deg": 28.079692840576172,
+      "train_size": 1768,
+      "val_size": 442,
+      "ar1_train_nll": 51.81125259399414,
+      "ar1_val_nll": 68.88795471191406,
+      "ar1_params": 192,
+      "ar1_train_seconds": 22.724076509475708
+    },
+    {
+      "domain_id": "1e8rA00",
+      "N": 48,
+      "identity_deg": 31.53227424621582,
+      "train_size": 1784,
+      "val_size": 446,
+      "ar1_train_nll": 57.39937210083008,
+      "ar1_val_nll": 55.64913558959961,
+      "ar1_params": 192,
+      "ar1_train_seconds": 21.409820795059204
+    },
+    {
+      "domain_id": "1gaxA04",
+      "N": 48,
+      "identity_deg": 33.49015808105469,
+      "train_size": 1776,
+      "val_size": 444,
+      "ar1_train_nll": 70.89004516601562,
+      "ar1_val_nll": 69.84368896484375,
+      "ar1_params": 192,
+      "ar1_train_seconds": 20.122180938720703
+    },
+    {
+      "domain_id": "1hw7A02",
+      "N": 48,
+      "identity_deg": 37.711875915527344,
+      "train_size": 1752,
+      "val_size": 438,
+      "ar1_train_nll": 78.9798355102539,
+      "ar1_val_nll": 76.72201538085938,
+      "ar1_params": 192,
+      "ar1_train_seconds": 21.09629511833191
+    },
+    {
+      "domain_id": "1jfkA02",
+      "N": 48,
+      "identity_deg": 32.75486373901367,
+      "train_size": 1768,
+      "val_size": 442,
+      "ar1_train_nll": 60.15695571899414,
+      "ar1_val_nll": 97.660400390625,
+      "ar1_params": 192,
+      "ar1_train_seconds": 20.601052284240723
+    },
+    {
+      "domain_id": "1kwgA03",
+      "N": 48,
+      "identity_deg": 24.69365119934082,
+      "train_size": 1768,
+      "val_size": 442,
+      "ar1_train_nll": 44.23755645751953,
+      "ar1_val_nll": 45.145362854003906,
+      "ar1_params": 192,
+      "ar1_train_seconds": 20.29768419265747
+    },
+    {
+      "domain_id": "1lwjA03",
+      "N": 48,
+      "identity_deg": 25.621992111206055,
+      "train_size": 1784,
+      "val_size": 446,
+      "ar1_train_nll": 48.46104049682617,
+      "ar1_val_nll": 47.773921966552734,
+      "ar1_params": 192,
+      "ar1_train_seconds": 20.282511234283447
+    },
+    {
+      "domain_id": "1ss3A00",
+      "N": 48,
+      "identity_deg": 32.51522445678711,
+      "train_size": 1760,
+      "val_size": 440,
+      "ar1_train_nll": 67.1418685913086,
+      "ar1_val_nll": 55.77208709716797,
+      "ar1_params": 192,
+      "ar1_train_seconds": 20.342262983322144
+    },
+    {
+      "domain_id": "1tpmA00",
+      "N": 48,
+      "identity_deg": 28.662094116210938,
+      "train_size": 1792,
+      "val_size": 448,
+      "ar1_train_nll": 52.93668746948242,
+      "ar1_val_nll": 53.45191955566406,
+      "ar1_params": 192,
+      "ar1_train_seconds": 20.287204265594482
+    },
+    {
+      "domain_id": "1uglA00",
+      "N": 48,
+      "identity_deg": 31.454423904418945,
+      "train_size": 1800,
+      "val_size": 450,
+      "ar1_train_nll": 64.84300231933594,
+      "ar1_val_nll": 59.96044158935547,
+      "ar1_params": 192,
+      "ar1_train_seconds": 20.262041330337524
+    },
+    {
+      "domain_id": "1vq8L01",
+      "N": 48,
+      "identity_deg": 54.606754302978516,
+      "train_size": 1792,
+      "val_size": 448,
+      "ar1_train_nll": 116.36835479736328,
+      "ar1_val_nll": 116.22049713134766,
+      "ar1_params": 192,
+      "ar1_train_seconds": 20.24117088317871
+    },
+    {
+      "domain_id": "1y66A00",
+      "N": 48,
+      "identity_deg": 31.95685577392578,
+      "train_size": 1768,
+      "val_size": 442,
+      "ar1_train_nll": 70.38322448730469,
+      "ar1_val_nll": 62.7631721496582,
+      "ar1_params": 192,
+      "ar1_train_seconds": 21.42353105545044
+    },
+    {
+      "domain_id": "1zv8G00",
+      "N": 48,
+      "identity_deg": 44.670570373535156,
+      "train_size": 1752,
+      "val_size": 438,
+      "ar1_train_nll": 102.36113739013672,
+      "ar1_val_nll": 88.56419372558594,
+      "ar1_params": 192,
+      "ar1_train_seconds": 22.89763116836548
+    },
+    {
+      "domain_id": "2bsqE01",
+      "N": 48,
+      "identity_deg": 38.29652404785156,
+      "train_size": 1776,
+      "val_size": 444,
+      "ar1_train_nll": 86.30229187011719,
+      "ar1_val_nll": 73.27399444580078,
+      "ar1_params": 192,
+      "ar1_train_seconds": 23.434975624084473
+    },
+    {
+      "domain_id": "2cfxA01",
+      "N": 48,
+      "identity_deg": 22.727745056152344,
+      "train_size": 1768,
+      "val_size": 442,
+      "ar1_train_nll": 30.64152717590332,
+      "ar1_val_nll": 30.634984970092773,
+      "ar1_params": 192,
+      "ar1_train_seconds": 23.3372061252594
+    },
+    {
+      "domain_id": "2cpbA00",
+      "N": 48,
+      "identity_deg": 40.44636154174805,
+      "train_size": 2000,
+      "val_size": 500,
+      "ar1_train_nll": 85.09909057617188,
+      "ar1_val_nll": 79.89231872558594,
+      "ar1_params": 192,
+      "ar1_train_seconds": 23.343822956085205
+    },
+    {
+      "domain_id": "2dk1A00",
+      "N": 48,
+      "identity_deg": 42.76241683959961,
+      "train_size": 2000,
+      "val_size": 500,
+      "ar1_train_nll": 84.46377563476562,
+      "ar1_val_nll": 78.47381591796875,
+      "ar1_params": 192,
+      "ar1_train_seconds": 23.129899501800537
+    },
+    {
+      "domain_id": "2e1mC02",
+      "N": 48,
+      "identity_deg": 40.72704315185547,
+      "train_size": 1704,
+      "val_size": 426,
+      "ar1_train_nll": 88.34551239013672,
+      "ar1_val_nll": 96.75396728515625,
+      "ar1_params": 192,
+      "ar1_train_seconds": 24.38201928138733
+    },
+    {
+      "domain_id": "2jz6A01",
+      "N": 48,
+      "identity_deg": 33.96677017211914,
+      "train_size": 1952,
+      "val_size": 488,
+      "ar1_train_nll": 60.52709197998047,
+      "ar1_val_nll": 62.24085998535156,
+      "ar1_params": 192,
+      "ar1_train_seconds": 24.239357709884644
+    },
+    {
+      "domain_id": "2m3eA00",
+      "N": 48,
+      "identity_deg": 34.930625915527344,
+      "train_size": 2000,
+      "val_size": 500,
+      "ar1_train_nll": 65.20431518554688,
+      "ar1_val_nll": 78.45565032958984,
+      "ar1_params": 192,
+      "ar1_train_seconds": 24.238191604614258
+    }
+  ]
+}

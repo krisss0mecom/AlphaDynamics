@@ -1,0 +1,77 @@
+{
+  "experiment": "timewarp_4aa_large_test_rollout",
+  "timestamp": "2026-04-28T21:27:40.653529+00:00",
+  "n_params_timewarp": 396563170,
+  "n_rollout": 2500,
+  "n_bins": 24,
+  "step_width": 100000,
+  "ckpt_path": "/workspace/timewarp_checkpoints/4aa_best_model.pt",
+  "data_root": "/workspace/timewarp_data/4AA-large/test",
+  "per_peptide": {
+    "AAAY": {
+      "n_atoms": 54,
+      "n_residues_audit": 2,
+      "residue_indices": [
+        1,
+        2
+      ],
+      "gt_split_idx": 40000,
+      "gt_n_frames": 10000,
+      "rollout_n_frames": 2500,
+      "rollout_seconds": 531.834067106247,
+      "rollout_throughput_fps": 4.700714291588552,
+      "jsd_per_residue": [
+        0.48357202286511203,
+        0.43630142145216266
+      ],
+      "mean_jsd": 0.45993672215863735,
+      "median_jsd": 0.45993672215863735,
+      "rollout_npz_path": "/workspace/AlphaDynamics/results/timewarp_rollout_npz/AAAY_timewarp_rollout.npz"
+    },
+    "AACE": {
+      "n_atoms": 49,
+      "n_residues_audit": 2,
+      "residue_indices": [
+        1,
+        2
+      ],
+      "gt_split_idx": 399200,
+      "gt_n_frames": 99801,
+      "rollout_n_frames": 2500,
+      "rollout_seconds": 533.8805873394012,
+      "rollout_throughput_fps": 4.682695080671078,
+      "jsd_per_residue": [
+        0.14407297225469023,
+        0.12491701767181748
+      ],
+      "mean_jsd": 0.13449499496325384,
+      "median_jsd": 0.13449499496325384,
+      "rollout_npz_path": "/workspace/AlphaDynamics/results/timewarp_rollout_npz/AACE_timewarp_rollout.npz"
+    },
+    "AAEW": {
+      "n_atoms": 62,
+      "n_residues_audit": 2,
+      "residue_indices": [
+        1,
+        2
+      ],
+      "gt_split_idx": 399200,
+      "gt_n_frames": 99801,
+      "rollout_n_frames": 2500,
+      "rollout_seconds": 531.7281699180603,
+      "rollout_throughput_fps": 4.701650469985918,
+      "jsd_per_residue": [
+        0.4551119910581999,
+        0.4904453038814333
+      ],
+      "mean_jsd": 0.47277864746981657,
+      "median_jsd": 0.47277864746981657,
+      "rollout_npz_path": "/workspace/AlphaDynamics/results/timewarp_rollout_npz/AAEW_timewarp_rollout.npz"
+    }
+  },
+  "aggregate": {
+    "peptide_count": 3,
+    "mean_jsd_across_peptides": 0.3557367881972359,
+    "median_jsd_across_peptides": 0.45993672215863735
+  }
+}

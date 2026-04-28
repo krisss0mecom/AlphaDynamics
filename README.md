@@ -4,12 +4,19 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![License: CC BY 4.0](https://img.shields.io/badge/Manuscript-CC--BY--4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-**Compact per-system neural surrogate for protein torsion dynamics.**
+**Compact per-system neural surrogate for protein torsion dynamics — AlphaFold-style accuracy for dynamics, not statics.**
 
-AlphaDynamics trains a small phase-flow model for one protein/domain from seed
-MD and predicts the next-step distribution over backbone torsion angles. In the
-current aligned mdCATH audit, it beats a matched MLP baseline on **40/40
-domains** and produces stable 2500-step torsion rollouts.
+AlphaDynamics trains a 348K-parameter phase-flow model per protein domain
+from seed MD and predicts the next-step distribution over backbone torsion
+angles. In the v2 (2026-04-29) audit it beats:
+
+- a matched **MLP baseline on 40/40 domains** (paired Wilcoxon $p<10^{-12}$,
+  6.44× ratio-of-means; 95% bootstrap CI 5.45–7.75×),
+- a **trivial AR(1) baseline in long rollouts** (gap-closure ratio 0.70 vs
+  AR(1)'s 0.00, anchored against the split-trajectory replica floor),
+- the **396M-parameter Microsoft Timewarp 4AA model on 3/3 shared
+  tetrapeptides** from the public `microsoft/timewarp` 4AA-large/test split
+  (mean Ramachandran JSD 0.095 vs 0.356, **3.7× closer** to ground truth).
 
 ![Aligned mdCATH NLL audit: AlphaDynamics vs MLP](paper/figures/fig1_scatter.png)
 
@@ -17,9 +24,14 @@ domains** and produces stable 2500-step torsion rollouts.
 
 - **Task:** learn a per-protein molecular-dynamics surrogate in φ/ψ torsion space.
 - **Model:** coupled phase oscillators + neural ODE + mixture-of-von-Mises head.
-- **Main result:** 20/20 wins at N=48 and 20/20 wins at N=98 against a matched MLP.
-- **Rollout audit:** six 2500-step rollouts with Ramachandran free-energy metrics.
-- **Scope:** per-system surrogate trained from seed MD, not a zero-shot sequence-to-dynamics model.
+- **One-step NLL:** 40/40 wins vs MLP, $p<10^{-12}$. AR(1) is competitive on
+  small systems; AlphaDynamics catches up on N=98 and pulls ahead on rollout.
+- **Rollout fidelity (load-bearing claim):** 70% gap-closure to noise floor,
+  vs MLP rollout 19%, AR(1) -2% (decohered toward uniform), uniform 0%.
+- **Shared-dataset head-to-head:** 3/3 wins vs Microsoft Timewarp 4AA model
+  on out-of-training tetrapeptides; 3.7× closer to ground truth on average.
+- **Scope:** per-system surrogate trained from seed MD, not a zero-shot
+  sequence-to-dynamics model.
 
 Why this may be useful: most protein-dynamics ML work focuses on large
 transferable Cartesian models. AlphaDynamics tests a smaller complementary
