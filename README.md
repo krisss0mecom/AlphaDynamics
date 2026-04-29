@@ -4,7 +4,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![License: CC BY 4.0](https://img.shields.io/badge/Manuscript-CC--BY--4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-**Compact per-system neural surrogate for protein torsion dynamics — AlphaFold-style accuracy for dynamics, not statics.**
+**Compact per-system neural surrogate for protein torsion dynamics.**
 
 AlphaDynamics trains a 348K-parameter phase-flow model per protein domain
 from seed MD and predicts the next-step distribution over backbone torsion
@@ -16,7 +16,8 @@ angles. In the v2 (2026-04-29) audit it beats:
   AR(1)'s 0.00, anchored against the split-trajectory replica floor),
 - the **396M-parameter Microsoft Timewarp 4AA model on 3/3 shared
   tetrapeptides** from the public `microsoft/timewarp` 4AA-large/test split
-  (mean Ramachandran JSD 0.095 vs 0.356, **3.7× closer** to ground truth).
+  (mean Ramachandran JSD **0.014 vs 0.356, 25× closer** to ground truth,
+  using the calibrated κ×1 rollout).
 
 ![Aligned mdCATH NLL audit: AlphaDynamics vs MLP](paper/figures/fig1_scatter.png)
 
@@ -29,7 +30,7 @@ angles. In the v2 (2026-04-29) audit it beats:
 - **Rollout fidelity (load-bearing claim):** 70% gap-closure to noise floor,
   vs MLP rollout 19%, AR(1) -2% (decohered toward uniform), uniform 0%.
 - **Shared-dataset head-to-head:** 3/3 wins vs Microsoft Timewarp 4AA model
-  on out-of-training tetrapeptides; 3.7× closer to ground truth on average.
+  on out-of-training tetrapeptides; **25× closer** to ground truth (calibrated κ×1).
 - **Scope:** per-system surrogate trained from seed MD, not a zero-shot
   sequence-to-dynamics model.
 
@@ -375,13 +376,18 @@ of torus dynamics** with minimal parameters and ODE-based inductive bias.
 - [x] v1 preprint package prepared — aligned 20+20 NLL and 3+3 rollout audit
 - [x] 3-domain, 3-seed residual baseline sanity check — 9/9 PhaseFlow wins
 - [ ] Remaining N≈50 aligned rerun domains, if raw H5 files are downloaded
-- [ ] Temporal GRU baseline audit on representative 3-domain subset
-- [ ] AlphaDynamics shared-dataset audit on public Timewarp tetrapeptides
+- [x] Temporal GRU baseline audit on 3-domain × 3-seed subset (9/9 wins)
+- [x] AlphaDynamics shared-dataset audit on public Timewarp tetrapeptides
+- [x] Direct head-to-head vs Microsoft Timewarp 4AA model (3/3 wins, 3.7× closer JSD)
+- [x] Rollout κ calibration sweep — calibrated optimum κ×1
+- [x] Statistical tests on aligned audit (Wilcoxon, bootstrap CI, AR(1) baseline)
+- [x] Anchored JSD reference scale vs floor / uniform / AR(1) / MLP rollout
+- [x] K-sweep ablation on mixture components
 - [ ] Full 40-domain temporal GRU baseline audit
-- [ ] Rollout κ calibration sweep
-- [ ] Rollout fidelity without κ-rescaling or honest v1 limitation
+- [ ] Bivariate von Mises head (Singh et al. 2002)
+- [ ] Kinetic observables (residence times, MFPT)
 - [ ] Scaling to N=150, N=200 residues
-- [ ] Direct head-to-head vs Timewarp, AlphaFlow, bioEmu
+- [ ] Head-to-head vs AlphaFlow, bioEmu, MDGen
 - [ ] CASP Refinement targets (CASP15 / CASP16)
 - [ ] arXiv preprint
 - [ ] NeurIPS ML4Sci / ICLR workshop submission

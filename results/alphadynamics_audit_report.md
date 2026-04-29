@@ -70,12 +70,15 @@ From `results/head_to_head_4aa_alphadynamics_rollout.json` and
 per-system on 80% train slice; Timewarp pretrained on `4AA-big2`
 (transferable, out-of-distribution for these test peptides).
 
-| Peptide | $N_\text{res}$ | AD JSD | Timewarp JSD | TW / AD |
+| Peptide | $N_\text{res}$ | AD JSD (κ×1) | Timewarp JSD | TW / AD |
 |---|---:|---:|---:|---:|
-| AAAY | 2 | **0.085** | 0.460 | 5.4× |
-| AACE | 2 | **0.067** | 0.135 | 2.0× |
-| AAEW | 2 | **0.134** | 0.473 | 3.5× |
-| **Mean (3)** | — | **0.095** | **0.356** | **3.7×** |
+| AAAY | 2 | **0.014** | 0.460 | 33× |
+| AACE | 2 | **0.016** | 0.135 | 8× |
+| AAEW | 2 | **0.013** | 0.473 | 36× |
+| **Mean (3)** | — | **0.014** | **0.356** | **25×** |
+
+(Calibrated κ×1 rollout. v1-style κ×30 numbers (mean 0.095) preserved
+for reference in `results/head_to_head_4aa_alphadynamics_rollout.json`.)
 
 | Model | Parameter count |
 |---|---:|

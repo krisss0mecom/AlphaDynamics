@@ -5,7 +5,7 @@ Krzysztof, oto co masz na biurku rano.
 ## TL;DR
 Paper v2 jest gotowy z **zaadresowanymi wszystkimi krytycznymi reviewer attacks** (26 attack vectors w `docs/REVIEWER_ATTACK_ANALYSIS_2026_04_28.md`) plus **nowy kluczowy wynik:**
 
-> **AlphaDynamics 3/3 wins w head-to-head vs Microsoft Timewarp (396M params) na publicznym datasecie 4AA-large/test. Mean JSD: AD = 0.095, Timewarp = 0.356 → AD 3.7× lepsza.**
+> **AlphaDynamics 3/3 wins w head-to-head vs Microsoft Timewarp (396M params) na publicznym datasecie 4AA-large/test. Mean JSD: AD = 0.014 (κ×1 calibrated), Timewarp = 0.356 → AD 25× lepsza.**
 
 ## Co konkretnie się zmieniło
 
@@ -40,13 +40,13 @@ Paper v2 jest gotowy z **zaadresowanymi wszystkimi krytycznymi reviewer attacks*
    AR(1) -2% (gorszy niż uniform na disordered).
    File: `results/jsd_reference_scale.json`
 
-4. **Head-to-head Timewarp 4AA**:
+4. **Head-to-head Timewarp 4AA** (calibrated κ×1):
    ```
    Peptide  AD JSD   Timewarp JSD   TW/AD
-   AAAY     0.085    0.460          5.4×
-   AACE     0.067    0.135          2.0×
-   AAEW     0.134    0.473          3.5×
-   Mean     0.095    0.356          3.7×
+   AAAY     0.014    0.460          33×
+   AACE     0.016    0.135          8×
+   AAEW     0.013    0.473          36×
+   Mean     0.014    0.356          25×
    ```
    AD per-system 348K params vs Timewarp transferable 396M params.
    Files:
