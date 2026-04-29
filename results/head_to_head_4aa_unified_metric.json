@@ -1,0 +1,68 @@
+{
+  "experiment": "head_to_head_4aa_unified_metric",
+  "timestamp": "2026-04-29T09:57:47.335397+00:00",
+  "metric": {
+    "name": "canonical_held_out_val_jsd",
+    "n_bins": 36,
+    "smoothing": "none",
+    "ground_truth": "held_out_val_only",
+    "comment": "Identical evaluator for AD and Timewarp (no smoothing, val-only GT)"
+  },
+  "rollout_steps": 2500,
+  "kappa_mult": 1.0,
+  "results": [
+    {
+      "peptide": "AAAY",
+      "N_residues": 2,
+      "timewarp_jsd_canonical": 0.5225627519861964,
+      "timewarp_jsd_per_residue": [
+        0.5246829059110423,
+        0.5204425980613506
+      ],
+      "alphadynamics_jsd_canonical": 0.1391902754690325,
+      "alphadynamics_jsd_per_residue": [
+        0.1285997923032313,
+        0.14978075863483375
+      ],
+      "ratio_tw_over_ad": 3.75430503478282,
+      "verdict": "AD wins"
+    },
+    {
+      "peptide": "AACE",
+      "N_residues": 2,
+      "timewarp_jsd_canonical": 0.29858336368103366,
+      "timewarp_jsd_per_residue": [
+        0.30659162040500293,
+        0.29057510695706434
+      ],
+      "alphadynamics_jsd_canonical": 0.20116059600383043,
+      "alphadynamics_jsd_per_residue": [
+        0.18166325203998385,
+        0.22065793996767702
+      ],
+      "ratio_tw_over_ad": 1.4843034352281803,
+      "verdict": "AD wins"
+    },
+    {
+      "peptide": "AAEW",
+      "N_residues": 2,
+      "timewarp_jsd_canonical": 0.5825327255207542,
+      "timewarp_jsd_per_residue": [
+        0.6037202558614024,
+        0.561345195180106
+      ],
+      "alphadynamics_jsd_canonical": 0.15449017274674107,
+      "alphadynamics_jsd_per_residue": [
+        0.15607778973664432,
+        0.1529025557568378
+      ],
+      "ratio_tw_over_ad": 3.770678193723766,
+      "verdict": "AD wins"
+    }
+  ],
+  "aggregate": {
+    "mean_timewarp_jsd": 0.46789294706266144,
+    "mean_alphadynamics_jsd": 0.164947014739868,
+    "mean_ratio_tw_over_ad": 2.8366257358495304
+  }
+}

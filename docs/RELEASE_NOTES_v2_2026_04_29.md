@@ -27,12 +27,15 @@ model.
   floor, cross-temperature physical floor, and uniform pessimal bound.
 - **Head-to-head with Microsoft Timewarp 4AA** on 3 shared
   tetrapeptides (AAAY/AACE/AAEW from `microsoft/timewarp` HF dataset
-  4AA-large/test split). AlphaDynamics with calibrated $\kappa\!\times\!1$
-  inference is 3/3 wins, mean JSD 0.014 vs 0.356, **25× closer to
-  ground truth** than the 396M-parameter transferable Cartesian model.
-  The preserved v1-style $\kappa\!\times\!30$ rerun gives mean JSD
-  0.095, already 3.7× better than Timewarp, but is no longer the v2
-  headline number.
+  4AA-large/test split). Under a single canonical Ramachandran JSD
+  evaluator applied identically to both models (`src/jsd_unified_eval.py`:
+  held-out val GT, 36 bins, no smoothing) AlphaDynamics with calibrated
+  $\kappa\!\times\!1$ inference is 3/3 wins, mean JSD **0.165 vs 0.468,
+  2.84× closer** to held-out density than the 396M-parameter transferable
+  Cartesian model. Earlier within-this-release headline "25× closer"
+  (commit fb355be) was wrong: AD JSD used a smoothed train+val GT
+  while Timewarp JSD used raw val GT, so the two numbers were not
+  comparable. The unified-evaluator results above supersede them.
 - **K-sweep ablation** on K ∈ {2,4,8,16,32} on 3 representative
   domains; performance approximately stable in K=4–16 regime,
   confirming K=8 is not over-tuned.
@@ -112,7 +115,7 @@ model.
 | Bootstrap 95% CI | not reported | 5.45–7.75× |
 | AR(1) baseline | not present | 14/20 wins on N=48 (one-step) |
 | Rollout fidelity | mean JSD 0.194 (anchorless) | gap-closure $\rho$=0.70 vs MLP=0.19 vs AR(1)=-0.02 |
-| Shared-dataset head-to-head | data-side only (3/3 PF wins on NLL) | full model head-to-head: 3/3 wins, 25× closer JSD (κ×1) |
+| Shared-dataset head-to-head | data-side only (3/3 PF wins on NLL) | full model head-to-head: 3/3 wins, 2.84× closer JSD under unified canonical metric (κ×1) |
 | Statistical test | not reported | Wilcoxon p < 1e-12 |
 | Hyperparameter table | scattered | consolidated Table 2 |
 | Kappa calibration | hardcoded ×30 | sweep over {1,5,10,20,30,50,100}, optimum at ×1 |

@@ -48,13 +48,15 @@ split.  We report three load-bearing results:
 
 3. **Head-to-head with Timewarp on shared dataset.**
    On AAAY/AACE/AAEW from the public Timewarp 4AA-large/test split,
-   AlphaDynamics 2500-step rollouts (calibrated $\kappa\!\times\!1$,
-   see §4.6) achieve per-peptide JSD of 0.014, 0.016, and 0.013
-   (mean 0.014). The pretrained Microsoft Timewarp 4AA model (396M
+   under a single canonical Ramachandran JSD evaluator (held-out val
+   only, 36 bins per axis, no smoothing) applied identically to both
+   models, AlphaDynamics 2500-step rollouts (calibrated $\kappa\!\times\!1$,
+   see §4.6) achieve per-peptide JSD of 0.139, 0.201, and 0.155
+   (mean 0.165). The pretrained Microsoft Timewarp 4AA model (396M
    parameters, transferable, trained on 4AA-big2) sampled from the
-   same initial states yields JSD of 0.460, 0.135, and 0.473 (mean
-   0.356) on the same residues — i.e., AlphaDynamics is 3/3 head-to-head
-   wins and **25× closer to the ground-truth Ramachandran density on
+   same initial states yields JSD of 0.523, 0.299, and 0.583 (mean
+   0.468) on the same residues — i.e., AlphaDynamics is 3/3 head-to-head
+   wins and **2.84× closer to the held-out Ramachandran density on
    average**. We interpret this as evidence that a per-system
    348K-parameter torsion-native specialist recovers more of the
    validation density than a transferable Cartesian-space neural
@@ -154,11 +156,13 @@ The contributions of this paper are:
 
 4. **Head-to-head with Timewarp on shared dataset (§4.5).**
    On 4AA-large/test peptides AAAY/AACE/AAEW (Klein et al. 2023),
-   AlphaDynamics with the calibrated $\kappa\!\times\!1$ rollout
-   achieves JSD 0.013–0.016 (mean 0.014), while the Microsoft Timewarp
-   4AA pretrained model (396M parameters) achieves JSD 0.135–0.473
-   (mean 0.356) on the same residues — AlphaDynamics 3/3 wins,
-   **25× closer** to the ground truth on average.
+   under a single canonical Ramachandran JSD applied identically to
+   both models (held-out val GT, 36 bins, no smoothing),
+   AlphaDynamics with calibrated $\kappa\!\times\!1$ achieves JSD
+   0.139–0.201 (mean 0.165), while the Microsoft Timewarp 4AA
+   pretrained model (396M parameters) achieves JSD 0.299–0.583
+   (mean 0.468) on the same residues — AlphaDynamics 3/3 wins,
+   **2.84× closer** to the held-out density on average.
 
 5. **Inference cost (§4.7).** On a single NVIDIA RTX-5090, AlphaDynamics
    generates one nanosecond of predicted trajectory in approximately
@@ -520,30 +524,35 @@ NLL comparison (which would conflate different state spaces and step
 widths).
 
 **Table 4.** Head-to-head rollout JSD on `4AA-large/test`
-tetrapeptides. AD = AlphaDynamics 348K-parameter per-system model
+tetrapeptides under a single canonical evaluator applied identically
+to both models: held-out val histogram only (no train leakage), 36
+bins per axis, no Gaussian smoothing, per-residue 2D JSD averaged
+across residues. AD = AlphaDynamics 348K-parameter per-system model
 trained on 80% of the tetrapeptide trajectory, evaluated with the
-v2 calibrated $\kappa\!\times\!1$ inference (see §4.6 for the
-$\kappa$-sweep that motivates this choice). TW = Microsoft Timewarp
-4AA `4aa_best_model.pt` (396M parameters, transferable, trained on
-4AA-big2). Lower is better.
+v2 calibrated $\kappa\!\times\!1$ inference (§4.6). TW = Microsoft
+Timewarp 4AA `4aa_best_model.pt` (396M parameters, transferable,
+trained on 4AA-big2). Lower is better.
 
 | Peptide | $N_\text{res}$ used | AD JSD (κ×1) | TW JSD | TW / AD |
 |---|---:|---:|---:|---:|
-| AAAY | 2 | **0.014** | 0.460 | 33× |
-| AACE | 2 | **0.016** | 0.135 | 8× |
-| AAEW | 2 | **0.013** | 0.473 | 36× |
-| **Mean (3)** | — | **0.014** | **0.356** | **25×** |
+| AAAY | 2 | **0.139** | 0.523 | 3.75× |
+| AACE | 2 | **0.201** | 0.299 | 1.48× |
+| AAEW | 2 | **0.155** | 0.583 | 3.77× |
+| **Mean (3)** | — | **0.165** | **0.468** | **2.84×** |
 
-For reference, the v1 $\kappa\!\times\!30$ heuristic on the same trained
-model gives AD JSDs of 0.085, 0.067, 0.134 (mean 0.095) — already 3.7×
-better than Timewarp, but the calibrated $\kappa\!\times\!1$ result
-above is the v2 headline number.
-
-All AlphaDynamics rollouts (κ×1 calibrated) are in
+All numbers above are produced by the unified evaluator
+`src/jsd_unified_eval.py`. Earlier internal numbers from the v2 commit
+fb355be (AD mean 0.014, TW mean 0.356, headline ratio 25×) used a
+different protocol for AD (smoothed train+val GT, 36 bins) than for
+Timewarp (raw val GT, 24 bins). Those numbers are not comparable to
+each other and have been superseded by the unified-evaluator results
+above. Raw AD rollouts (κ×1 calibrated) are in
 `results/head_to_head_4aa_alphadynamics_rollout_kappa1.json`; the
 v1-style κ×30 rerun is preserved in
-`results/head_to_head_4aa_alphadynamics_rollout.json`. All Timewarp
-rollouts are in `results/timewarp_rollout_4aa.json`.
+`results/head_to_head_4aa_alphadynamics_rollout.json`. Timewarp
+rollouts are in `results/timewarp_rollout_4aa.json`. The unified
+re-evaluation that produced this table is in
+`results/head_to_head_4aa_unified_metric.json`.
 
 **Reading.** On both AAAY and AACE, AlphaDynamics' per-system
 specialist (348K parameters) closes more of the
@@ -721,9 +730,10 @@ retain 76% of the entropy gap between the uniform pessimal bound and
 the dataset noise floor while a trivial AR(1) baseline that wins
 one-step NLL on 14/20 domains decoheres to within 0.010 of uniform.
 On the public Microsoft Timewarp 4AA-large/test tetrapeptide split,
-AlphaDynamics (calibrated $\kappa\!\times\!1$) achieves mean rollout
-JSD 0.014 versus 0.356 for the 396M-parameter Cartesian Timewarp model
-— a **25× gain** on out-of-training peptides. The architecture—coupled phase oscillators on
+under a single canonical Ramachandran JSD applied identically to both
+models, AlphaDynamics (calibrated $\kappa\!\times\!1$) achieves mean
+rollout JSD 0.165 versus 0.468 for the 396M-parameter Cartesian
+Timewarp model — a **2.84× gain** on out-of-training peptides. The architecture—coupled phase oscillators on
 the torus, evolved via a learnable ODE inspired by the Kuramoto model
 and phase-gate computing (Gwóźdź 2026a)—demonstrates that
 torus-native inductive bias plus seed-MD per-system training yields
@@ -753,8 +763,8 @@ from the $\kappa$-rescaling heuristic.](figures/ramachandran_aligned3_4000step_g
 ![Figure 5 — Head-to-head Ramachandran on AAAY (4AA-large/test).
 Top: ground truth from validation slice. Middle: AlphaDynamics
 calibrated κ×1 (348K params, per-system). Bottom: Microsoft
-Timewarp 4AA (396M params, transferable). AD JSD = 0.014, TW JSD = 0.460
-on the same residues.](figures/head_to_head_4aa_alphadynamics_rollout_kappa1_AAAY.png){width=95%}
+Timewarp 4AA (396M params, transferable). Under unified canonical
+JSD: AD = 0.139, TW = 0.523.](figures/head_to_head_4aa_alphadynamics_rollout_kappa1_AAAY.png){width=95%}
 
 # Acknowledgements
 

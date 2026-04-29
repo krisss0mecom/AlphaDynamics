@@ -5,7 +5,7 @@ Krzysztof, oto co masz na biurku rano.
 ## TL;DR
 Paper v2 jest gotowy z **zaadresowanymi wszystkimi krytycznymi reviewer attacks** (26 attack vectors w `docs/REVIEWER_ATTACK_ANALYSIS_2026_04_28.md`) plus **nowy kluczowy wynik:**
 
-> **AlphaDynamics 3/3 wins w head-to-head vs Microsoft Timewarp (396M params) na publicznym datasecie 4AA-large/test. Mean JSD: AD = 0.014 (κ×1 calibrated), Timewarp = 0.356 → AD 25× lepsza.**
+> **AlphaDynamics 3/3 wins w head-to-head vs Microsoft Timewarp (396M params) na publicznym datasecie 4AA-large/test, pod unified canonical metric (val-only GT, 36 bins, no smoothing). Mean JSD: AD = 0.165 (κ×1 calibrated), Timewarp = 0.468 → AD 2.84× lepsza.**
 
 ## Co konkretnie się zmieniło
 
@@ -40,15 +40,19 @@ Paper v2 jest gotowy z **zaadresowanymi wszystkimi krytycznymi reviewer attacks*
    AR(1) -2% (gorszy niż uniform na disordered).
    File: `results/jsd_reference_scale.json`
 
-4. **Head-to-head Timewarp 4AA** (calibrated κ×1):
+4. **Head-to-head Timewarp 4AA** (calibrated κ×1, unified canonical JSD):
    ```
    Peptide  AD JSD   Timewarp JSD   TW/AD
-   AAAY     0.014    0.460          33×
-   AACE     0.016    0.135          8×
-   AAEW     0.013    0.473          36×
-   Mean     0.014    0.356          25×
+   AAAY     0.139    0.523          3.75×
+   AACE     0.201    0.299          1.48×
+   AAEW     0.155    0.583          3.77×
+   Mean     0.165    0.468          2.84×
    ```
    AD per-system 348K params vs Timewarp transferable 396M params.
+   Unified evaluator (`src/jsd_unified_eval.py`): held-out val GT,
+   36 bins, no smoothing. Earlier "25×" number from commit fb355be
+   came from inconsistent metrics (smoothed train+val for AD vs raw
+   val for TW) and has been corrected.
    Files:
    - `results/head_to_head_4aa_alphadynamics_rollout_kappa1.{json,md}`
    - legacy κ×30 reference: `results/head_to_head_4aa_alphadynamics_rollout.{json,md}`

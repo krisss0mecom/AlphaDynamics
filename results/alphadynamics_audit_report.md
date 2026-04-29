@@ -71,15 +71,21 @@ per-system on 80% train slice and evaluated with calibrated κ×1
 inference; Timewarp pretrained on `4AA-big2` (transferable,
 out-of-distribution for these test peptides).
 
+Under a single canonical Ramachandran JSD evaluator
+(`src/jsd_unified_eval.py`) applied identically to both models —
+held-out val GT, 36 bins, no smoothing:
+
 | Peptide | $N_\text{res}$ | AD JSD (κ×1) | Timewarp JSD | TW / AD |
 |---|---:|---:|---:|---:|
-| AAAY | 2 | **0.014** | 0.460 | 33× |
-| AACE | 2 | **0.016** | 0.135 | 8× |
-| AAEW | 2 | **0.013** | 0.473 | 36× |
-| **Mean (3)** | — | **0.014** | **0.356** | **25×** |
+| AAAY | 2 | **0.139** | 0.523 | 3.75× |
+| AACE | 2 | **0.201** | 0.299 | 1.48× |
+| AAEW | 2 | **0.155** | 0.583 | 3.77× |
+| **Mean (3)** | — | **0.165** | **0.468** | **2.84×** |
 
-(Calibrated κ×1 rollout. v1-style κ×30 numbers (mean 0.095) preserved
-for reference in `results/head_to_head_4aa_alphadynamics_rollout.json`.)
+Earlier v2 commit fb355be reported AD mean 0.014 vs TW mean 0.356
+(headline 25×) but used a smoothed train+val GT for AD and raw val GT
+for Timewarp — those numbers are not comparable to each other.
+The unified-evaluator numbers above supersede them.
 
 | Model | Parameter count |
 |---|---:|

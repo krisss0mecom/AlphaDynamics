@@ -15,9 +15,11 @@ angles. In the v2 (2026-04-29) audit it beats:
 - a **trivial AR(1) baseline in long rollouts** (gap-closure ratio 0.70 vs
   AR(1)'s 0.00, anchored against the split-trajectory replica floor),
 - the **396M-parameter Microsoft Timewarp 4AA model on 3/3 shared
-  tetrapeptides** from the public `microsoft/timewarp` 4AA-large/test split
-  (mean Ramachandran JSD **0.014 vs 0.356, 25× closer** to ground truth,
-  using the calibrated κ×1 rollout).
+  tetrapeptides** from the public `microsoft/timewarp` 4AA-large/test split,
+  under a single canonical Ramachandran JSD evaluator applied identically
+  to both models (held-out val GT, 36 bins, no smoothing): mean JSD
+  **0.165 vs 0.468, 2.84× closer** to held-out density, using the
+  calibrated κ×1 rollout.
 
 ![Aligned mdCATH NLL audit: AlphaDynamics vs MLP](paper/figures/fig1_scatter.png)
 
@@ -30,7 +32,8 @@ angles. In the v2 (2026-04-29) audit it beats:
 - **Rollout fidelity (load-bearing claim):** 70% gap-closure to noise floor,
   vs MLP rollout 19%, AR(1) -2% (decohered toward uniform), uniform 0%.
 - **Shared-dataset head-to-head:** 3/3 wins vs Microsoft Timewarp 4AA model
-  on out-of-training tetrapeptides; **25× closer** to ground truth (calibrated κ×1).
+  on out-of-training tetrapeptides under unified canonical JSD;
+  **2.84× closer** to held-out density (calibrated κ×1).
 - **Scope:** per-system surrogate trained from seed MD, not a zero-shot
   sequence-to-dynamics model.
 
