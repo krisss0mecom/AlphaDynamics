@@ -611,7 +611,7 @@ than Cartesian space, which removes the dimensional overhead of
 explicit-solvent atoms. Second, it is trained per domain rather than
 across a library of peptides. The shared-task experiment in §4.5 shows
 that the per-system specialist is competitive on rollout fidelity
-against a 1000× larger transferable model on out-of-training peptides
+against a transferable Cartesian model on out-of-training peptides
 when the per-system model has access to seed MD from the target.
 Equilibrium samplers such as bioEmu (Lewis et al. 2024) and AlphaFlow
 (Jing et al. 2024a) serve a different purpose entirely: they generate
@@ -701,7 +701,8 @@ artifacts used in this manuscript are:
 * `results/ramachandran_aligned3_4000step_gpu.md` and `_n98_*.md` — v1 rollout audits
 * `results/strong_baseline_3dom_3seed_4000step_cuda.md` — residual MLP baseline
 * `results/temporal_gru_3dom_3seed_4000step_cuda.md` — temporal GRU baseline
-* `results/head_to_head_4aa_alphadynamics_rollout.md` — AD on shared 4AA peptides
+* `results/head_to_head_4aa_alphadynamics_rollout_kappa1.md` — AD on shared 4AA peptides (calibrated κ×1)
+* `results/head_to_head_4aa_alphadynamics_rollout.md` — AD on shared 4AA peptides (legacy κ×30 reference)
 * `results/timewarp_rollout_4aa.json` — Microsoft Timewarp on shared 4AA peptides
 
 The CLI `alphadynamics doctor / validate-data / convert / train /

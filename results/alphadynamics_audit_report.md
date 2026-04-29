@@ -64,11 +64,12 @@ Gap-closure ratio $\rho = 1 - (\text{JSD}_\text{model} - \text{floor}) /
 
 ## Head-to-head: AlphaDynamics vs Microsoft Timewarp 4AA (shared dataset)
 
-From `results/head_to_head_4aa_alphadynamics_rollout.json` and
+From `results/head_to_head_4aa_alphadynamics_rollout_kappa1.json` and
 `results/timewarp_rollout_4aa.json`. Peptides AAAY/AACE/AAEW from
 `microsoft/timewarp` HF dataset, `4AA-large/test` split. AD trained
-per-system on 80% train slice; Timewarp pretrained on `4AA-big2`
-(transferable, out-of-distribution for these test peptides).
+per-system on 80% train slice and evaluated with calibrated κ×1
+inference; Timewarp pretrained on `4AA-big2` (transferable,
+out-of-distribution for these test peptides).
 
 | Peptide | $N_\text{res}$ | AD JSD (κ×1) | Timewarp JSD | TW / AD |
 |---|---:|---:|---:|---:|
@@ -85,8 +86,8 @@ for reference in `results/head_to_head_4aa_alphadynamics_rollout.json`.)
 | AlphaDynamics (per-system 4AA) | 348K |
 | Microsoft Timewarp 4AA | 396M |
 
-AlphaDynamics 3/3 wins on Ramachandran fidelity vs the 1000× larger
-transferable Cartesian propagator.
+AlphaDynamics 3/3 wins on Ramachandran fidelity against the
+transferable Cartesian propagator in this shared-density metric.
 
 ## Kappa calibration sweep (replaces v1 κ×30 heuristic)
 
@@ -138,7 +139,8 @@ Temporal GRU 8-frame (3-domain × 3-seed):
 | JSD reference scale | `results/jsd_reference_scale.json` |
 | AD rollout aligned3 N=48 | `results/ramachandran_aligned3_4000step_gpu.json` |
 | AD rollout aligned3 N=98 | `results/ramachandran_aligned3_n98_4000step_gpu.json` |
-| AD rollout 4AA tetrapeptides | `results/head_to_head_4aa_alphadynamics_rollout.json` |
+| AD rollout 4AA tetrapeptides | `results/head_to_head_4aa_alphadynamics_rollout_kappa1.json` |
+| AD rollout 4AA legacy κ×30 | `results/head_to_head_4aa_alphadynamics_rollout.json` |
 | Timewarp rollout 4AA | `results/timewarp_rollout_4aa.json` |
 | Strong baseline | `results/strong_baseline_3dom_3seed_4000step_cuda.json` |
 | Temporal GRU | `results/temporal_gru_3dom_3seed_4000step_cuda.json` |

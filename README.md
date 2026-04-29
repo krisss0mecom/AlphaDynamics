@@ -378,7 +378,7 @@ of torus dynamics** with minimal parameters and ODE-based inductive bias.
 - [ ] Remaining N≈50 aligned rerun domains, if raw H5 files are downloaded
 - [x] Temporal GRU baseline audit on 3-domain × 3-seed subset (9/9 wins)
 - [x] AlphaDynamics shared-dataset audit on public Timewarp tetrapeptides
-- [x] Direct head-to-head vs Microsoft Timewarp 4AA model (3/3 wins, 3.7× closer JSD)
+- [x] Direct head-to-head vs Microsoft Timewarp 4AA model (3/3 wins, 25× closer JSD with calibrated κ×1)
 - [x] Rollout κ calibration sweep — calibrated optimum κ×1
 - [x] Statistical tests on aligned audit (Wilcoxon, bootstrap CI, AR(1) baseline)
 - [x] Anchored JSD reference scale vs floor / uniform / AR(1) / MLP rollout

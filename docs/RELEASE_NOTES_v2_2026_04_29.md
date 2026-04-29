@@ -27,9 +27,12 @@ model.
   floor, cross-temperature physical floor, and uniform pessimal bound.
 - **Head-to-head with Microsoft Timewarp 4AA** on 3 shared
   tetrapeptides (AAAY/AACE/AAEW from `microsoft/timewarp` HF dataset
-  4AA-large/test split). AlphaDynamics 3/3 wins, mean JSD 0.095 vs
-  0.356, **3.7× closer to ground truth** than the 396M-parameter
-  transferable Cartesian model.
+  4AA-large/test split). AlphaDynamics with calibrated $\kappa\!\times\!1$
+  inference is 3/3 wins, mean JSD 0.014 vs 0.356, **25× closer to
+  ground truth** than the 396M-parameter transferable Cartesian model.
+  The preserved v1-style $\kappa\!\times\!30$ rerun gives mean JSD
+  0.095, already 3.7× better than Timewarp, but is no longer the v2
+  headline number.
 - **K-sweep ablation** on K ∈ {2,4,8,16,32} on 3 representative
   domains; performance approximately stable in K=4–16 regime,
   confirming K=8 is not over-tuned.
@@ -44,10 +47,9 @@ model.
 
 ### Reframed claims
 - The headline contribution shifts from "one-step NLL beats MLP" to
-  "rollout fidelity beats trivial baselines and a 1000× larger
-  transferable model on shared data". The v1 result (40/40 wins vs MLP)
-  remains intact and statistically significant; it is no longer the
-  load-bearing claim.
+  "rollout fidelity beats trivial baselines and a transferable model on
+  shared data". The v1 result (40/40 wins vs MLP) remains intact and
+  statistically significant; it is no longer the load-bearing claim.
 - The "extreme parameter efficiency" claim against transferable models
   is removed; we no longer compare 348K-AD parameter count to
   396M-Timewarp parameter count as a contribution. The remaining
@@ -87,7 +89,8 @@ model.
 - `results/ar1_baseline_aligned40.json` (N=48)
 - `results/ar1_baseline_aligned40_n98.json` (N=98)
 - `results/jsd_reference_scale.json` (3 N=48 audit domains)
-- `results/head_to_head_4aa_alphadynamics_rollout.json,md` (3 tetrapeptides)
+- `results/head_to_head_4aa_alphadynamics_rollout_kappa1.json,md` (3 tetrapeptides, calibrated v2)
+- `results/head_to_head_4aa_alphadynamics_rollout.json,md` (3 tetrapeptides, preserved v1-style κ×30)
 - `results/timewarp_rollout_4aa.json` (3 tetrapeptides, 396M params)
 - `results/k_sweep_ablation.json`
 - `results/kappa_sweep_aligned3.json`
@@ -97,6 +100,9 @@ model.
 - `paper/figures/head_to_head_4aa_alphadynamics_rollout_AAAY.png`
 - `paper/figures/head_to_head_4aa_alphadynamics_rollout_AACE.png`
 - `paper/figures/head_to_head_4aa_alphadynamics_rollout_AAEW.png`
+- `paper/figures/head_to_head_4aa_alphadynamics_rollout_kappa1_AAAY.png`
+- `paper/figures/head_to_head_4aa_alphadynamics_rollout_kappa1_AACE.png`
+- `paper/figures/head_to_head_4aa_alphadynamics_rollout_kappa1_AAEW.png`
 
 ## Headline numbers at a glance
 
@@ -106,7 +112,7 @@ model.
 | Bootstrap 95% CI | not reported | 5.45–7.75× |
 | AR(1) baseline | not present | 14/20 wins on N=48 (one-step) |
 | Rollout fidelity | mean JSD 0.194 (anchorless) | gap-closure $\rho$=0.70 vs MLP=0.19 vs AR(1)=-0.02 |
-| Shared-dataset head-to-head | data-side only (3/3 PF wins on NLL) | full model head-to-head: 3/3 wins, 3.7× closer JSD |
+| Shared-dataset head-to-head | data-side only (3/3 PF wins on NLL) | full model head-to-head: 3/3 wins, 25× closer JSD (κ×1) |
 | Statistical test | not reported | Wilcoxon p < 1e-12 |
 | Hyperparameter table | scattered | consolidated Table 2 |
 | Kappa calibration | hardcoded ×30 | sweep over {1,5,10,20,30,50,100}, optimum at ×1 |
@@ -161,9 +167,9 @@ python src/head_to_head_timewarp.py \
 # 5. AlphaDynamics on the same 3 tetrapeptides:
 python src/ramachandran_energy_v2.py \
     --data_dir timewarp_real_data/4AA-large_test3 \
-    --out_prefix head_to_head_4aa_alphadynamics_rollout \
+    --out_prefix head_to_head_4aa_alphadynamics_rollout_kappa1 \
     --temp 348 --steps 4000 --batch 256 \
-    --rollout_steps 2500 --kappa_mult 30 --device cuda \
+    --rollout_steps 2500 --kappa_mult 1 --device cuda \
     --domains AAAY AACE AAEW
 
 # 6. K and kappa sweeps:

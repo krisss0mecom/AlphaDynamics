@@ -50,9 +50,10 @@ Paper v2 jest gotowy z **zaadresowanymi wszystkimi krytycznymi reviewer attacks*
    ```
    AD per-system 348K params vs Timewarp transferable 396M params.
    Files:
-   - `results/head_to_head_4aa_alphadynamics_rollout.{json,md}`
+   - `results/head_to_head_4aa_alphadynamics_rollout_kappa1.{json,md}`
+   - legacy κ×30 reference: `results/head_to_head_4aa_alphadynamics_rollout.{json,md}`
    - `results/timewarp_rollout_4aa.json`
-   - `paper/figures/head_to_head_4aa_alphadynamics_rollout_*.png`
+   - `paper/figures/head_to_head_4aa_alphadynamics_rollout_kappa1_*.png`
 
 5. **K-sweep ablation** (K mixture components):
    - K∈{2,4,8,16,32} na 3 reprezentatywnych domens
@@ -62,7 +63,8 @@ Paper v2 jest gotowy z **zaadresowanymi wszystkimi krytycznymi reviewer attacks*
 6. **Kappa calibration sweep**:
    - Sweep nad κ ∈ {1,5,10,20,30,50,100}
    - **Optymalne: κ×1** (no rescaling) na ordered domains
-   - Heurystyka v1 κ×30 jest 4× gorsza od κ×1
+   - Heurystyka v1 κ×30 jest 2.3× gorsza od κ×1 na audit sweep;
+     na 4AA head-to-head mean JSD poprawił się z 0.095 do 0.014
    - File: `results/kappa_sweep_aligned3.json`
 
 ### Reframing paperu
@@ -78,7 +80,7 @@ Paper v2 jest gotowy z **zaadresowanymi wszystkimi krytycznymi reviewer attacks*
 | Replica policy nieopisana | **+ §3.5: replica 1, 80/20 frame split** |
 | t_max=4 z 4-domain pilot | **+ wzmianka że 3 audit domens potwierdziły stabilność** |
 | Rollout claim "JSD=0.194 good?" | **+ anchored vs floor (0.038), MLP rollout (0.443), AR(1) rollout (0.580), uniform (0.570)** |
-| No Timewarp head-to-head | **+ §4.5 head-to-head Tabela 4: 3/3 wins, 3.7× lepszy** |
+| No Timewarp head-to-head | **+ §4.5 head-to-head Tabela 4: 3/3 wins, 25× lepszy przy κ×1** |
 
 ## Pliki do przeglądu rano
 
@@ -89,8 +91,8 @@ W kolejności priorytetu:
 3. **`docs/REVIEWER_ATTACK_ANALYSIS_2026_04_28.md`** — 26 attack vectors
 4. **`results/alphadynamics_audit_report.md`** — pełna tabela wszystkich wyników
 5. **`results/audit_statistics_v2.md`** — paper-ready Table 1
-6. **`results/head_to_head_4aa_alphadynamics_rollout.md`** — AD rollout 4AA
-7. **`paper/figures/head_to_head_4aa_alphadynamics_rollout_AAAY.png`** — przykład
+6. **`results/head_to_head_4aa_alphadynamics_rollout_kappa1.md`** — AD rollout 4AA
+7. **`paper/figures/head_to_head_4aa_alphadynamics_rollout_kappa1_AAAY.png`** — przykład
 
 ## Co NIE jest jeszcze zrobione
 
