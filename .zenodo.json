@@ -1,13 +1,14 @@
 {
-  "title": "AlphaDynamics: A compact per-system phase-flow surrogate for protein torsion dynamics",
+  "title": "AlphaDynamics: A Per-System Phase-Flow Propagator for Protein Torsion Dynamics with Calibrated Rollout Fidelity",
   "upload_type": "software",
-  "publication_date": "2026-04-26",
+  "publication_date": "2026-04-29",
+  "version": "v2.0-preprint-2026-04-29",
   "creators": [
     {
       "name": "Gwozdz, Krzysztof"
     }
   ],
-  "description": "AlphaDynamics is a compact per-system phase-flow surrogate for protein backbone torsion dynamics, validated on aligned mdCATH one-step NLL and rollout/free-energy audits.",
+  "description": "Reviewer-hardened v2 release of AlphaDynamics, a per-system neural propagator for protein backbone torsion dynamics. This release adds an anchored rollout-fidelity audit, AR(1) baseline, statistical tests, K and kappa ablations, and a shared 4AA peptide head-to-head against Microsoft Timewarp. With calibrated kappa x1 rollout inference, AlphaDynamics achieves mean Ramachandran JSD 0.014 versus 0.356 for the pretrained Microsoft Timewarp 4AA model on three out-of-training tetrapeptides. Scope: AlphaDynamics is trained from target-specific seed MD and is not a zero-shot sequence-to-dynamics model.",
   "access_right": "open",
   "license": "Apache-2.0",
   "keywords": [
@@ -16,7 +17,10 @@
     "torsion angles",
     "phase oscillators",
     "neural ODE",
-    "mdCATH"
+    "mdCATH",
+    "Timewarp",
+    "Ramachandran",
+    "rollout fidelity"
   ],
   "related_identifiers": [
     {

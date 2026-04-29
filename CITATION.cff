@@ -1,17 +1,17 @@
 cff-version: 1.2.0
-message: "If you use AlphaDynamics, please cite the Zenodo v1 preprint."
-title: "AlphaDynamics: A compact per-system phase-flow surrogate for protein torsion dynamics"
+message: "If you use AlphaDynamics, please cite the Zenodo v2 preprint."
+title: "AlphaDynamics: A Per-System Phase-Flow Propagator for Protein Torsion Dynamics with Calibrated Rollout Fidelity"
 authors:
   - family-names: "Gwozdz"
     given-names: "Krzysztof"
-doi: "10.5281/zenodo.19791327"
-url: "https://doi.org/10.5281/zenodo.19791327"
+doi: "10.5281/zenodo.19877815"
+url: "https://doi.org/10.5281/zenodo.19877815"
 repository-code: "https://github.com/krisss0mecom/AlphaDynamics"
-version: "v1.0-preprint-2026-04-25"
-date-released: "2026-04-26"
+version: "v2.0-preprint-2026-04-29"
+date-released: "2026-04-29"
 license: "Apache-2.0"
 abstract: >-
-  AlphaDynamics is a compact per-system neural propagator for protein
-  backbone torsion dynamics. It operates on aligned phi/psi torsions and
-  predicts next-step mixture-of-von-Mises distributions through a learned
-  phase-flow ODE.
+  AlphaDynamics is a per-system neural propagator for protein backbone
+  torsion dynamics. The v2 release adds reviewer-hardening, an anchored
+  rollout-fidelity audit, AR(1) and Timewarp head-to-head baselines, and
+  calibrated kappa x1 rollout inference.

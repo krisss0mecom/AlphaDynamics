@@ -40,7 +40,7 @@ route: a torus-native specialist model for one protein at a time.
 
 **Author:** Krzysztof Gwozdz
 **Started:** 2026-04-14
-**Preprint DOI (v1, 2026-04-26):** [10.5281/zenodo.19791327](https://doi.org/10.5281/zenodo.19791327)
+**Preprint DOI (v2, 2026-04-29):** [10.5281/zenodo.19877815](https://doi.org/10.5281/zenodo.19877815)
 **Concept DOI (all versions):** [10.5281/zenodo.19788564](https://doi.org/10.5281/zenodo.19788564)
 
 ## Citation
@@ -50,13 +50,13 @@ If you use this work, please cite:
 ```bibtex
 @misc{gwozdz2026alphadynamics,
   author       = {Gwóźdź, Krzysztof},
-  title        = {{AlphaDynamics}: A compact per-system phase-flow surrogate
-                  for protein torsion dynamics},
+  title        = {{AlphaDynamics}: A Per-System Phase-Flow Propagator for
+                  Protein Torsion Dynamics with Calibrated Rollout Fidelity},
   year         = {2026},
   publisher    = {Zenodo},
-  version      = {v1.0-preprint-2026-04-25},
-  doi          = {10.5281/zenodo.19791327},
-  url          = {https://doi.org/10.5281/zenodo.19791327}
+  version      = {v2.0-preprint-2026-04-29},
+  doi          = {10.5281/zenodo.19877815},
+  url          = {https://doi.org/10.5281/zenodo.19877815}
 }
 ```
 
@@ -407,17 +407,17 @@ under CC BY 4.0; see `LICENSE-MANUSCRIPT.md`.
 
 ## Citation
 
-Please cite the Zenodo v1 preprint:
+Please cite the Zenodo v2 preprint:
 
 ```bibtex
 @misc{gwozdz2026alphadynamics,
   author       = {Gwóźdź, Krzysztof},
-  title        = {{AlphaDynamics}: A compact per-system phase-flow surrogate
-                  for protein torsion dynamics},
+  title        = {{AlphaDynamics}: A Per-System Phase-Flow Propagator for
+                  Protein Torsion Dynamics with Calibrated Rollout Fidelity},
   year         = {2026},
   publisher    = {Zenodo},
-  version      = {v1.0-preprint-2026-04-25},
-  doi          = {10.5281/zenodo.19791327},
-  url          = {https://doi.org/10.5281/zenodo.19791327}
+  version      = {v2.0-preprint-2026-04-29},
+  doi          = {10.5281/zenodo.19877815},
+  url          = {https://doi.org/10.5281/zenodo.19877815}
 }
 ```
