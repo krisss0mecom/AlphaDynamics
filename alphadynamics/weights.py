@@ -221,7 +221,10 @@ def load_pretrained(
     path = _ensure_cached(spec)
 
     state = torch.load(path, map_location="cpu", weights_only=False)
-    if isinstance(state, dict) and "state_dict" in state:
+    if isinstance(state, dict) and "model_state" in state:
+        state_dict = state["model_state"]
+        ckpt_config = state.get("model_config", state.get("config", spec.config))
+    elif isinstance(state, dict) and "state_dict" in state:
         state_dict = state["state_dict"]
         ckpt_config = state.get("config", spec.config)
     elif isinstance(state, dict) and "model" in state:
