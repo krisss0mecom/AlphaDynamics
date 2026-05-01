@@ -88,6 +88,33 @@ alphadynamics version
 alphadynamics --help     # full subcommand reference
 ```
 
+### Use from Claude Code (natural language)
+
+If you use [Claude Code](https://claude.com/claude-code), you can install
+the AlphaDynamics plugin and then drive predictions in natural language:
+
+```
+/plugin marketplace add krisss0mecom/AlphaDynamics
+/plugin install alphadynamics@alphadynamics-skills
+```
+
+Then in any Claude Code session you can say things like:
+
+> "predict torsions for KLVFFAE"
+>
+> "what conformations does GNNQQNY adopt?"
+>
+> "compare AAAY vs AAAW alpha-helix populations"
+>
+> "Ramachandran for FVNQHLCGSHLVEALYLVCGE" (insulin B chain, 20 aa)
+
+Claude Code will run the right `alphadynamics predict` command, parse the
+output, report basin populations, and (optionally) plot the Ramachandran
+map for you. Everything stays local; the plugin just orchestrates the
+already-installed `alphadynamics` pip package.
+
+Plugin source lives in this repo under `plugins/alphadynamics/`.
+
 ### Headline result (v0.3.0)
 
 Canonical Ramachandran Jensen-Shannon divergence (36 bins, no smoothing,
