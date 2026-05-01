@@ -42,7 +42,20 @@ pip install alphadynamics
 That installs the code. Pretrained weights (a few MB) are downloaded
 automatically on first use into `~/.cache/alphadynamics/weights/`.
 
-### Predict from the command line
+### Interactive mode (easiest, since v0.3.1)
+
+Just type the command alone:
+
+```bash
+alphadynamics
+```
+
+It prompts you for the sequence, ensemble size, timesteps, and output path
+(all with sensible defaults), runs the prediction, and prints the
+Ramachandran basin populations on the spot. Good for first-time users
+and quick exploration.
+
+### Predict from the command line (power users)
 
 ```bash
 alphadynamics predict --sequence AAAY --n-ensemble 16 --rollout-steps 2500 -o aaay.npz
@@ -68,9 +81,11 @@ print(traj.shape)     # (16, 2500, 4, 2)
 ### Other CLI commands
 
 ```bash
+alphadynamics            # interactive prompt (NEW in v0.3.1)
 alphadynamics info       # banner, headline metric, credits
 alphadynamics models     # list available pretrained weights
 alphadynamics version
+alphadynamics --help     # full subcommand reference
 ```
 
 ### Headline result (v0.3.0)
@@ -299,7 +314,7 @@ AlphaDynamics/
 ├── alphadynamics/                       — v0.3.0 sequence-only product (NEW)
 │   ├── __init__.py                       — public API + banner
 │   ├── api.py                            — predict_torsion_ensemble
-│   ├── cli.py                            — `alphadynamics predict / info / models`
+│   ├── cli.py                            — `alphadynamics` (interactive) / predict / info / models
 │   ├── banner.py                         — ASCII logo + author credit
 │   ├── weights.py                        — lazy download from GitHub Releases
 │   ├── ad_init.py                        — von Mises mixture prior
@@ -463,7 +478,7 @@ generates the right entry automatically.
   year    = {2026},
   url     = {https://github.com/krisss0mecom/AlphaDynamics},
   license = {Apache-2.0},
-  version = {0.3.0}
+  version = {0.3.1}
 }
 ```
 
