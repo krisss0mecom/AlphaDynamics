@@ -50,3 +50,50 @@ logs/
 mdcath_real_data/
 mdcath_raw/
 timewarp_real_data/
+
+# --- v0.3.0 product release (sequence-only) — additional protections ---
+# Operational journals / brainstorming
+PROJECT_JOURNAL.md
+REPORT_*.md
+RESEARCH_PLAN.md
+pomysły
+pomysly
+
+# Private commercialization / outreach docs
+docs/PRIVATE_*.md
+docs/PREPRINT_DRAFT_*.md
+docs/PITCH_DECK_*.md
+docs/COLD_EMAIL_*.md
+docs/ESM_*.md
+docs/RESULTS_AUDIT_*.md
+docs/NEXT_ACTION_PLAN_*.md
+
+# Private packaging artifacts
+private_*/
+private_blackbox_demo/
+private_repro_bundle/
+private_product/
+
+# Internal operational scripts
+scripts/watchdog*.py
+scripts/*telegram*
+scripts/pipeline_*.sh
+scripts/run_overnight*.sh
+scripts/run_phase2a*.sh
+scripts/run_mdcath*.sh
+scripts/run_post_esm_eval.sh
+scripts/run_v2*.sh
+scripts/run_3way*.sh
+
+# Closed negative-result branches
+alphadynamics/models_esm.py
+alphadynamics/training_warmup.py
+scripts/precompute_esm*.py
+scripts/train_transfer_esm.py
+scripts/train_transfer_warmup.py
+
+# pip / build artifacts
+*.egg-info/
+build/
+dist/
+.cache/

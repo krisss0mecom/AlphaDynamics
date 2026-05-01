@@ -1,17 +1,50 @@
 cff-version: 1.2.0
-message: "If you use AlphaDynamics, please cite the Zenodo v2 preprint."
-title: "AlphaDynamics: A Per-System Phase-Flow Propagator for Protein Torsion Dynamics with Calibrated Rollout Fidelity"
+message: "If you use AlphaDynamics, please cite both the v2 paper (per-system) and the v0.3.0 release (sequence-only product), as appropriate to your use."
+title: "AlphaDynamics: Compact phase-flow neural propagator for protein torsion dynamics"
 authors:
   - family-names: "Gwozdz"
     given-names: "Krzysztof"
-doi: "10.5281/zenodo.19877815"
-url: "https://doi.org/10.5281/zenodo.19877815"
-repository-code: "https://github.com/krisss0mecom/AlphaDynamics"
-version: "v2.0-preprint-2026-04-29"
-date-released: "2026-04-29"
-license: "Apache-2.0"
+    email: "krisss0gwo@gmail.com"
+    country: "PL"
 abstract: >-
-  AlphaDynamics is a per-system neural propagator for protein backbone
-  torsion dynamics. The v2 release adds reviewer-hardening, an anchored
-  rollout-fidelity audit, AR(1) and Timewarp head-to-head baselines, and
-  calibrated kappa x1 rollout inference.
+  AlphaDynamics is a compact phase-flow neural propagator for protein
+  backbone torsion dynamics. The v2 release (per-system, 2026-04-29) is
+  a Zenodo-archived preprint with reviewer-hardening and head-to-head
+  results against Microsoft Timewarp. The v0.3.0 release (sequence-only,
+  2026-05-01) is a transferable, pip-installable product that predicts
+  torsion-angle ensembles from amino-acid sequence alone, achieving
+  2.39x lower canonical Ramachandran JSD than Microsoft Timewarp on the
+  4AA benchmark with ~123K parameters total.
+type: software
+license: Apache-2.0
+repository-code: "https://github.com/krisss0mecom/AlphaDynamics"
+url: "https://github.com/krisss0mecom/AlphaDynamics"
+keywords:
+  - protein dynamics
+  - molecular dynamics surrogate
+  - phase oscillators
+  - neural ODE
+  - torsion angles
+  - ramachandran
+  - reservoir computing
+version: "0.3.0"
+date-released: 2026-05-01
+
+# Concept DOI (always points to latest version on Zenodo)
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.19788564"
+    description: "Concept DOI (all versions)"
+  - type: doi
+    value: "10.5281/zenodo.19877815"
+    description: "v2.0-preprint-2026-04-29 (per-system paper)"
+
+references:
+  - type: article
+    title: "AlphaDynamics: A Per-System Phase-Flow Propagator for Protein Torsion Dynamics with Calibrated Rollout Fidelity"
+    authors:
+      - family-names: "Gwozdz"
+        given-names: "Krzysztof"
+    year: 2026
+    doi: "10.5281/zenodo.19877815"
+    url: "https://doi.org/10.5281/zenodo.19877815"

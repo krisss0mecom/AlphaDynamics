@@ -1,0 +1,64 @@
+AlphaDynamics
+Copyright 2026 Krzysztof Gwozdz
+
+This product includes software developed by Krzysztof Gwozdz
+(krisss0gwo@gmail.com) as an independent researcher in Poland.
+
+================================================================================
+ABOUT THE AUTHOR
+================================================================================
+
+AlphaDynamics is the protein-dynamics application of a multi-year research
+program on phase-oscillator computation, conducted by Krzysztof Gwozdz:
+
+  1. REZON hardware system (2024-2025)
+     80 physical phase oscillators on 8 PCBs, custom CUDA kernels
+     (phase_reservoir_cuda.cu), Jetson Orin Nano integration:
+     Jetson -> AD9850 (200 Hz anchor) -> PCB RC -> AD7606 -> Jetson.
+     Llama / Bielik LLM integration via custom bindings.
+     QUBO / Max-Cut / SAT benchmarks against quantum-computing primitives.
+
+  2. phase-entanglement-rc (2024-2025)
+     Formal phase computing: phase Turing machine, phase Hopfield,
+     phase full adder, CNOT phase gates, dense associative memories,
+     capacity studies. Published paper.
+
+  3. phase-cnot-neuroscience (2025-2026)
+     Biological validation on real local-field-potential ECEPHYS
+     recordings (rats and humans), theta-gamma CNOT coupling,
+     published paper.
+
+  4. AlphaDynamics (2026)
+     Application of phase-flow propagator dynamics to protein
+     torsion (phi, psi) timeseries. Sequence-only, transferable,
+     ~123K parameters, 2.39x lower JSD than Microsoft Timewarp on
+     the canonical 4AA benchmark, 3/3 peptide wins.
+
+The intuition behind AlphaDynamics' architectural choices (RK4 integration
+horizon t_max=4.0, cnot/warmup settling time, anchor-frequency lock,
+mixture-of-von-Mises emission, kappa clamp) does not come from generic
+ML hyperparameter search - it comes from years of measured behavior of
+80 physical phase oscillators in real time and from neuroscience
+validation of theta-gamma coupling.
+
+================================================================================
+USE OF THIS SOFTWARE
+================================================================================
+
+This software is licensed under the Apache License, Version 2.0
+(see the LICENSE file). You may freely use, modify, and distribute
+this software, including for commercial purposes, provided you
+preserve this NOTICE file and the copyright statement above in
+any redistribution or derivative work, as required by Section 4
+of the Apache 2.0 license.
+
+If you use AlphaDynamics in academic work, please cite it (see
+CITATION.cff). Citation is a community norm, not a legal requirement.
+
+================================================================================
+CONTACT
+================================================================================
+
+Krzysztof Gwozdz
+krisss0gwo@gmail.com
+https://github.com/krisss0mecom/AlphaDynamics

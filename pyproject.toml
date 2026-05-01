@@ -4,64 +4,92 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alphadynamics"
-version = "0.1.0"
-description = "Per-system phase-flow surrogate for protein torsion dynamics"
+version = "0.3.0"
+description = "Compact sequence-only neural propagator for protein torsion dynamics — 2.39× lower JSD than Microsoft Timewarp at 3000× fewer parameters."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "Apache-2.0" }
+license = { file = "LICENSE" }
 authors = [
-  { name = "Krzysztof Gwozdz" }
+    { name = "Krzysztof Gwozdz", email = "krisss0gwo@gmail.com" },
+]
+maintainers = [
+    { name = "Krzysztof Gwozdz", email = "krisss0gwo@gmail.com" },
 ]
 keywords = [
-  "molecular-dynamics",
-  "protein-dynamics",
-  "torsion",
-  "neural-ode",
-  "phase-oscillators",
+    "protein-dynamics",
+    "molecular-dynamics",
+    "torsion-angles",
+    "phase-oscillators",
+    "neural-ode",
+    "ramachandran",
+    "ml-for-biology",
+    "reservoir-computing",
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: Apache Software License",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
-  "torch>=2.0",
-  "torchdiffeq>=0.2.5",
-  "numpy<2",
-  "scipy",
-  "mdtraj",
-  "h5py",
-  "huggingface_hub",
-  "matplotlib",
+    "torch>=2.0",
+    "numpy>=1.24",
+    "tqdm>=4.65",
 ]
+
+[project.optional-dependencies]
+# For reproducing the v2 paper (per-system models in legacy src/).
+paper = [
+    "torchdiffeq>=0.2.5",
+    "mdtraj>=1.9; platform_machine != 'aarch64'",
+    "h5py",
+    "scipy>=1.10",
+    "huggingface_hub",
+    "matplotlib>=3.7",
+]
+viz = [
+    "matplotlib>=3.7",
+]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+]
+all = [
+    "alphadynamics[paper,viz,dev]",
+]
+
+[project.scripts]
+alphadynamics = "alphadynamics.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/krisss0mecom/AlphaDynamics"
 Repository = "https://github.com/krisss0mecom/AlphaDynamics"
-DOI = "https://doi.org/10.5281/zenodo.19791327"
+Issues = "https://github.com/krisss0mecom/AlphaDynamics/issues"
+Releases = "https://github.com/krisss0mecom/AlphaDynamics/releases"
+"Paper v2 DOI" = "https://doi.org/10.5281/zenodo.19877815"
+"Concept DOI" = "https://doi.org/10.5281/zenodo.19788564"
 
-[project.scripts]
-alphadynamics = "alphadynamics_cli:main"
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["alphadynamics*"]
+exclude = ["tests*", "scripts*", "configs*", "docs*", "checkpoints*", "results*", "private_*", "src*", "paper*", "data*"]
 
-[tool.setuptools]
-package-dir = { "" = "src" }
-py-modules = [
-  "alphadynamics_cli",
-  "chain_md",
-  "chain_model",
-  "mdcath_benchmark",
-  "mdcath_convert_alltemps",
-  "mdcath_convert_v3",
-  "ramachandran_energy_v2",
-  "rollout_eval",
-  "strong_baseline_audit",
-  "temporal_baseline_audit",
-  "timewarp_comparison",
-  "train_chain",
-  "train_real",
-]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "src"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

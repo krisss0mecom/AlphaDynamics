@@ -3,12 +3,126 @@
 [![DOI](https://zenodo.org/badge/1211339504.svg)](https://doi.org/10.5281/zenodo.19788564)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![License: CC BY 4.0](https://img.shields.io/badge/Manuscript-CC--BY--4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org)
 
-**Compact per-system neural surrogate for protein torsion dynamics.**
+**Compact phase-flow neural propagator for protein torsion dynamics.**
 
-AlphaDynamics trains a 348K-parameter phase-flow model per protein domain
-from seed MD and predicts the next-step distribution over backbone torsion
-angles. In the v2 (2026-04-29) audit it beats:
+This repository ships **two complementary releases** of AlphaDynamics:
+
+| Release          | Type            | What it gives you                                                    | Status                     |
+| ---------------- | --------------- | -------------------------------------------------------------------- | -------------------------- |
+| **v0.3.0 (latest, 2026-05-01)** | sequence-only product | `pip install alphadynamics` → predict torsion ensembles from a sequence string, no MD seed required | Beta product release       |
+| **v2.0-preprint (2026-04-29)** | per-system paper      | per-protein surrogate trained from seed MD; full reviewer-hardening audit, Zenodo DOI | Published preprint (paper) |
+
+Both releases share the same phase-flow architecture; **v0.3.0** focuses on
+broad usability (one model, any sequence) and **v2** focuses on per-protein
+fidelity (one model per protein, audited against MD).
+
+---
+
+## v0.3.0 — sequence-only product (2026-05-01)
+
+> 2.39× lower JSD than Microsoft Timewarp · 3000× fewer parameters · 64 phase oscillators · `pip install alphadynamics`
+
+A tiny (~123K parameter) neural propagator that, given only a protein
+sequence, predicts an ensemble of torsion-angle (φ, ψ) trajectories matching
+the marginal Ramachandran density of long-timescale molecular dynamics
+simulations. On the canonical 4AA benchmark it produces densities that are
+**2.39× closer to ground-truth MD** than Microsoft Research's Timewarp model
+(396M parameters), at roughly **3000× fewer parameters**.
+
+This is a free and open contribution to the protein-dynamics community.
+
+### Quickstart
+
+```bash
+pip install alphadynamics
+```
+
+That installs the code. Pretrained weights (a few MB) are downloaded
+automatically on first use into `~/.cache/alphadynamics/weights/`.
+
+### Predict from the command line
+
+```bash
+alphadynamics predict --sequence AAAY --n-ensemble 16 --rollout-steps 2500 -o aaay.npz
+```
+
+Output `aaay.npz` has shape `(16, 2500, 4, 2)` — ensemble × time × residues ×
+[phi, psi] in radians.
+
+### Predict from Python
+
+```python
+from alphadynamics import predict_torsion_ensemble
+
+traj = predict_torsion_ensemble(
+    "AAAY",
+    n_ensemble=16,
+    rollout_steps=2500,
+    seed=42,          # deterministic
+)
+print(traj.shape)     # (16, 2500, 4, 2)
+```
+
+### Other CLI commands
+
+```bash
+alphadynamics info       # banner, headline metric, credits
+alphadynamics models     # list available pretrained weights
+alphadynamics version
+```
+
+### Headline result (v0.3.0)
+
+Canonical Ramachandran Jensen-Shannon divergence (36 bins, no smoothing,
+held-out validation as ground truth) on the canonical 4AA test set, averaged
+over three peptides AAAY, AACE, AAEW:
+
+| Model                  | Params | Mean JSD | 4AA wins | Notes                           |
+| ---------------------- | -----: | -------: | :------: | ------------------------------- |
+| Microsoft Timewarp     |  396 M |    0.468 |   0 / 3  | published baseline (research)   |
+| **AlphaDynamics v0.3** |  123 K |  **0.196** | **3 / 3** | **2.39× lower**, **3000× smaller** |
+
+On longer peptides the improvement narrows but the model remains competitive
+at a tiny fraction of the parameter count:
+
+| Test set       | Mean JSD |
+| -------------- | -------: |
+| 4AA (3 peps)   |    0.196 |
+| mdCATH N≈48    |    0.276 |
+| mdCATH N≈98    |    0.389 |
+
+**Honest caveats.** The headline metric is *density* match — the model
+captures the marginal Ramachandran distribution well but its kinetic
+fingerprints (autocorrelation, dwell-time distribution, transition matrix)
+do not yet reproduce MD at the same level of precision. v0.3.0 is best
+read today as a *density surrogate*, not a kinetics surrogate.
+
+### How v0.3.0 works (one paragraph)
+
+A residue's torsion state `(φ, ψ)` is treated as a phase pair. Conditioned
+on the amino-acid identity, position, and current angles, an MLP emits
+per-residue oscillator parameters: an intrinsic frequency, a coupling
+matrix, and an anchor phase. A phase-flow ODE then integrates the joint
+state of 64 coupled oscillators with classical RK4 over a fixed horizon
+`t_max=4.0` (8 substeps). The integrated phase state is decoded into a
+mixture of axis-independent von Mises distributions per residue, from
+which the next torsion frame is sampled. Rolled out autoregressively, this
+defines a transferable sequence-only propagator over the torsion torus.
+
+The code lives in [`alphadynamics/`](alphadynamics/). Weights are hosted
+on the [GitHub Releases page](https://github.com/krisss0mecom/AlphaDynamics/releases)
+and downloaded on demand by `alphadynamics.weights.load_pretrained`.
+
+---
+
+## v2.0-preprint — per-system paper (2026-04-29)
+
+The v2 release is a per-protein surrogate: AlphaDynamics trains a
+348K-parameter phase-flow model **per protein domain** from seed MD and
+predicts the next-step distribution over backbone torsion angles. In the
+v2 (2026-04-29) audit it beats:
 
 - a matched **MLP baseline on 40/40 domains** (paired Wilcoxon $p<10^{-12}$,
   6.44× ratio-of-means; 95% bootstrap CI 5.45–7.75×),
@@ -23,7 +137,7 @@ angles. In the v2 (2026-04-29) audit it beats:
 
 ![Aligned mdCATH NLL audit: AlphaDynamics vs MLP](paper/figures/fig1_scatter.png)
 
-## 30-second summary
+### v2 30-second summary
 
 - **Task:** learn a per-protein molecular-dynamics surrogate in φ/ψ torsion space.
 - **Model:** coupled phase oscillators + neural ODE + mixture-of-von-Mises head.
@@ -34,45 +148,23 @@ angles. In the v2 (2026-04-29) audit it beats:
 - **Shared-dataset head-to-head:** 3/3 wins vs Microsoft Timewarp 4AA model
   on out-of-training tetrapeptides under unified canonical JSD;
   **2.84× closer** to held-out density (calibrated κ×1).
-- **Scope:** per-system surrogate trained from seed MD, not a zero-shot
-  sequence-to-dynamics model.
-
-Why this may be useful: most protein-dynamics ML work focuses on large
-transferable Cartesian models. AlphaDynamics tests a smaller complementary
-route: a torus-native specialist model for one protein at a time.
+- **Scope (v2):** per-system surrogate trained from seed MD, not a
+  zero-shot sequence-to-dynamics model. (For sequence-only, use **v0.3.0**.)
 
 **Author:** Krzysztof Gwozdz
 **Started:** 2026-04-14
 **Preprint DOI (v2, 2026-04-29):** [10.5281/zenodo.19877815](https://doi.org/10.5281/zenodo.19877815)
 **Concept DOI (all versions):** [10.5281/zenodo.19788564](https://doi.org/10.5281/zenodo.19788564)
 
-## Citation
+### What v2 does
 
-If you use this work, please cite:
+AlphaDynamics learns a fast surrogate of a specific protein trajectory.
+Given seed MD data for one folded protein/domain, it trains a compact
+model that predicts the next-step distribution in backbone torsion
+space and can generate autoregressive rollouts for analysis.
 
-```bibtex
-@misc{gwozdz2026alphadynamics,
-  author       = {Gwóźdź, Krzysztof},
-  title        = {{AlphaDynamics}: A Per-System Phase-Flow Propagator for
-                  Protein Torsion Dynamics with Calibrated Rollout Fidelity},
-  year         = {2026},
-  publisher    = {Zenodo},
-  version      = {v2.0-preprint-2026-04-29},
-  doi          = {10.5281/zenodo.19877815},
-  url          = {https://doi.org/10.5281/zenodo.19877815}
-}
-```
-
-## What it does
-
-AlphaDynamics learns a fast surrogate of a specific protein trajectory. Given
-seed MD data for one folded protein/domain, it trains a compact model that
-predicts the next-step distribution in backbone torsion space and can generate
-autoregressive rollouts for analysis.
-
-It is not yet a zero-shot sequence-to-dynamics model. A future sequence- or
-structure-conditioned version must be validated with sequence-identity splits
-and external baselines before making that claim.
+The v2 release is *not* a zero-shot sequence-to-dynamics model. For that,
+use the **v0.3.0** sequence-only product above.
 
 - Input: torsion angles (φ, ψ) of all residues at time t
 - Output: mixture-of-von-Mises distribution over angles at time t+dt
@@ -81,7 +173,7 @@ and external baselines before making that claim.
 - Model size: ~350K parameters per protein/domain for the v1 full-chain model
 - Inference speed: ~16 ms per frame on RTX 5090
 
-## Headline results
+### v2 headline results
 
 **Current publication-grade status:** the aligned audit is the defensible v1
 result: 20 mdCATH domains at N=48, 20 domains at N=98, plus 3+3 aligned
@@ -95,7 +187,7 @@ rollout inputs. Smoke tests and short undertrained audits are excluded from the
 public release; the shipped result tables below are the publication-grade
 4000-step audits.
 
-### Aligned mdCATH N≈50 audit — 20 domains, 4000 steps
+#### Aligned mdCATH N≈50 audit — 20 domains, 4000 steps
 
 Fresh phi/psi-aligned rerun on the 20 locally available N≈50 mdCATH domains
 at 348 K:
@@ -107,7 +199,7 @@ at 348 K:
 All 20 input `.npz` files have `dihedral_alignment=common_residue_index`.
 Full table: [results/mdcath_aligned20_4000step_cpu.md](results/mdcath_aligned20_4000step_cpu.md).
 
-### Aligned rollout free-energy audit — 3 domains, GPU
+#### Aligned rollout free-energy audit — 3 domains, GPU
 
 Fresh aligned 2500-step rollouts with `κ×30` on three representative domains:
 
@@ -121,7 +213,7 @@ Ordered domains are good (`1lwjA03`, `1kwgA03`: JSD ≈ 0.14, population error
 
 Full table: [results/ramachandran_aligned3_4000step_gpu.md](results/ramachandran_aligned3_4000step_gpu.md).
 
-### Aligned N=100 scaling audit — 20 domains, GPU
+#### Aligned N=100 scaling audit — 20 domains, GPU
 
 Fresh aligned one-step NLL audit at the larger size class (N=98 common
 residues, mdCATH 348 K), trained for 4000 steps per model with batch
@@ -136,7 +228,7 @@ PhaseFlow $t_\text{max}=4$ wins all 20 domains. Best margins: `4ktyB04`
 identity, MLP, PF_t1, PF_t4 NLLs is in
 [results/mdcath_aligned20_n100_4000step_gpu.md](results/mdcath_aligned20_n100_4000step_gpu.md).
 
-### Aligned N=98 rollout free-energy audit — 3 domains, GPU
+#### Aligned N=98 rollout free-energy audit — 3 domains, GPU
 
 Fresh aligned 2500-step rollouts with `κ×30` on three representative N=98 domains:
 
@@ -159,7 +251,7 @@ Release/audit documentation:
 - [docs/AUDIT_MANIFEST_2026_04_25.md](docs/AUDIT_MANIFEST_2026_04_25.md)
 - [docs/PREPRINT_PACKAGE_2026_04_25.md](docs/PREPRINT_PACKAGE_2026_04_25.md)
 
-## Empirical laws observed
+### v2 empirical laws observed
 
 **Law 1 — Warmup time matches protein scale:**
 Optimum ODE integration time t_max depends on chain length N and data
@@ -174,7 +266,7 @@ the identity baseline (natural frame-to-frame change). Well-ordered
 proteins (small step) give the largest advantage. Fast/disordered proteins
 (large step) give smaller advantage but AlphaDynamics still wins.
 
-## Architecture
+### v2 architecture
 
 ```
 dφ_i/dt = ω_i + Σ_j W_ij · cos(φ_j) · sin(φ_j − φ_i) + a · sin(φ_anchor_i − φ_i)
@@ -191,46 +283,60 @@ dφ_i/dt = ω_i + Σ_j W_ij · cos(φ_j) · sin(φ_j − φ_i) + a · sin(φ_anc
 - **Output head**: 8-component mixture of von Mises densities on T^N
   (axis-independent within each mixture component)
 
-## Directory layout
+---
+
+## Repository layout
 
 ```
 AlphaDynamics/
 ├── README.md                            — this file
-├── requirements.txt
-├── src/                                 — model + training + eval code
-│   ├── alphadynamics_cli.py               — product CLI (doctor/validate/train/rollout/baselines/report)
+├── LICENSE                              — Apache 2.0 (code)
+├── LICENSE-MANUSCRIPT.md                — CC BY 4.0 (paper)
+├── NOTICE                               — author lineage and attribution
+├── CITATION.cff                         — citation metadata
+├── pyproject.toml                       — pip install alphadynamics
+│
+├── alphadynamics/                       — v0.3.0 sequence-only product (NEW)
+│   ├── __init__.py                       — public API + banner
+│   ├── api.py                            — predict_torsion_ensemble
+│   ├── cli.py                            — `alphadynamics predict / info / models`
+│   ├── banner.py                         — ASCII logo + author credit
+│   ├── weights.py                        — lazy download from GitHub Releases
+│   ├── ad_init.py                        — von Mises mixture prior
+│   ├── models.py                         — phase-flow ODE propagator
+│   ├── rollout.py                        — autoregressive rollout
+│   ├── training.py                       — training loops
+│   ├── data.py                           — protein trajectory loader
+│   ├── metrics.py                        — canonical Ramachandran JSD
+│   └── baselines.py                      — AR(1), Gaussian-step, identity
+│
+├── src/                                 — v2 paper code (per-system)
+│   ├── alphadynamics_cli.py               — legacy product CLI
 │   ├── chain_model.py                     — ChainMLP + ChainPhaseFlow
-│   ├── train_real.py                      — ChainPhaseFlowVar + training utilities
-│   ├── train_chain.py                     — chain training helpers
+│   ├── train_real.py                      — training utilities
 │   ├── chain_md.py                        — synthetic Langevin MD generator
 │   ├── rollout_eval.py                    — autoregressive rollout + metrics
 │   ├── ramachandran_energy_v2.py          — Ramachandran free-energy audit
-│   ├── mdcath_convert_v3.py               — mdCATH HDF5 → aligned dihedral npz
-│   ├── mdcath_convert_alltemps.py         — multi-temperature converter
-│   ├── mdcath_benchmark.py                — aligned mdCATH benchmark runner
-│   └── run_aligned5_benchmark.sh          — reproducible 5-domain audit
+│   └── ... (additional audit + benchmark scripts)
+│
 ├── paper/
 │   ├── main.md                            — manuscript source
 │   ├── main.pdf                           — compiled preprint
 │   ├── references.bib
 │   ├── make_figures.py
-│   └── figures/                           — fig1/fig2/fig3 + 6 ramachandran panels
-├── results/                             — aligned audit artifacts
-│   ├── mdcath_aligned20_4000step_cpu.{json,md}      — N=48 NLL (20 domains)
-│   ├── mdcath_aligned20_n100_4000step_gpu.{json,md} — N=98 NLL (20 domains)
-│   ├── ramachandran_aligned3_4000step_gpu.{json,md} — N=48 rollout (3 domains)
-│   └── ramachandran_aligned3_n98_4000step_gpu.{json,md} — N=98 rollout (3 domains)
-├── docs/                                — preprint package & closeout notes
-│   ├── PREPRINT_PACKAGE_2026_04_25.md
-│   ├── RESEARCH_CLOSEOUT_2026_04_24.md
-│   └── AUDIT_MANIFEST_2026_04_25.md
+│   └── figures/                           — fig1/fig2/fig3 + ramachandran panels
+│
+├── results/                             — aligned audit artifacts (v2 paper)
+├── docs/                                — preprint package & audit notes
 └── data/                                — how to obtain mdCATH (raw not committed)
 ```
 
-## Reproducing results
+---
+
+## Reproducing the v2 paper
 
 ```bash
-pip install -r requirements.txt
+pip install -e .[paper]
 
 # 1. Download mdCATH domains into mdcath_raw/data/
 # Example shown in data/README.md via huggingface_hub
@@ -253,98 +359,16 @@ DEVICE=cpu STEPS=4000 BATCH=512 src/run_aligned5_benchmark.sh
 python src/ramachandran_energy_v2.py
 ```
 
-## CLI MVP
-
-The product wrapper keeps the audited scripts behind one command surface:
-
-```bash
-# Optional editable install gives the `alphadynamics` command
-pip install -e .
-
-# Check environment, dependencies, CUDA, and shipped audit artifacts
-alphadynamics doctor
-
-# Validate the aligned torsion data contract
-alphadynamics validate-data \
-  --data-dir mdcath_real_data/mdcath_348K \
-  --strict
-
-# Convert mdCATH H5 files to aligned torsion npz
-alphadynamics convert \
-  --bench-dir mdcath_raw \
-  --out-dir mdcath_real_data/mdcath_348K
-
-# Train/evaluate the one-step NLL benchmark
-alphadynamics train \
-  --data-dir mdcath_real_data/mdcath_348K \
-  --out-prefix mdcath_aligned20_4000step_cpu \
-  --steps 4000 \
-  --batch 512 \
-  --device auto
-
-# Train rollout model and evaluate Ramachandran free-energy fidelity
-alphadynamics rollout \
-  --data-dir mdcath_real_data/mdcath_alltemps \
-  --out-prefix ramachandran_aligned3_4000step_gpu \
-  --domains 1lwjA03 1kwgA03 1vq8L01 \
-  --steps 4000 \
-  --batch 512 \
-  --device auto
-
-# Extend rollout research with a kappa calibration sweep
-alphadynamics kappa-sweep \
-  --data-dir mdcath_real_data/mdcath_alltemps \
-  --out-prefix kappa_sweep_n48 \
-  --domains 1lwjA03 1kwgA03 1vq8L01 \
-  --kappa-mult 1 5 10 20 30 50 \
-  --device auto
-
-# Audit against a stronger residual/autoregressive MLP baseline
-alphadynamics strong-baseline \
-  --data-dir mdcath_real_data/mdcath_348K \
-  --out-prefix strong_baseline_audit \
-  --steps 4000 \
-  --batch 256 \
-  --seeds 42 43 44 \
-  --device auto
-
-# Audit against a true temporal baseline with an 8-frame GRU context
-alphadynamics temporal-baseline \
-  --data-dir mdcath_real_data/mdcath_348K \
-  --out-prefix temporal_gru_3dom_3seed_4000step_cuda \
-  --domains 1lwjA03 1kwgA03 1vq8L01 \
-  --window 8 \
-  --steps 4000 \
-  --batch 128 \
-  --seeds 42 43 44 \
-  --phaseflow-tmax 4 \
-  --device auto
-
-# Prepare a small shared-dataset audit on Microsoft's public Timewarp data
-alphadynamics timewarp-comparison list \
-  --dataset 4AA-large \
-  --split test \
-  --limit 10
-
-alphadynamics timewarp-comparison convert \
-  --dataset 4AA-large \
-  --split test \
-  --max-domains 3 \
-  --max-frames 2500 \
-  --out-dir timewarp_real_data/4AA-large_test
-
-# Build compact Markdown summary from existing JSON result files
-alphadynamics report \
-  --output results/alphadynamics_audit_report.md
-```
-
-Every execution subcommand supports `--dry-run` to print the underlying audited
-script call before launching a long job.
+The legacy v2 CLI (`src/alphadynamics_cli.py`) is preserved for paper
+reproducibility. The new pip-installable CLI under `alphadynamics.cli`
+is the v0.3.0 sequence-only product surface.
 
 The productization plan and research expansion ladder are documented in
 [docs/PRODUCT_V1_2026_04_28.md](docs/PRODUCT_V1_2026_04_28.md).
 The reviewer hardening checklist is tracked in
 [docs/REVIEWER_RISK_REGISTER_2026_04_28.md](docs/REVIEWER_RISK_REGISTER_2026_04_28.md).
+
+---
 
 ## Related work
 
@@ -362,31 +386,21 @@ The reviewer hardening checklist is tracked in
 AlphaDynamics occupies a distinct niche: **continuous temporal propagation
 of torus dynamics** with minimal parameters and ODE-based inductive bias.
 
+---
+
 ## Status
 
-- [x] Historical mdCATH 37-domain unified benchmark at N≈50 — superseded by aligned subset
-- [x] Historical mdCATH 20-domain scaling benchmark at N≈100 — superseded by aligned N=98 rerun
-- [x] Aligned mdCATH N≈50 benchmark subset — 20 domains, 20/20 wins
-- [x] Cross-temperature all-temperature data regenerated with alignment metadata
-- [x] Rollout stability test (no explosion, moderate distribution preservation)
-- [x] Aligned rollout/free-energy audit — 3 N=48 domains, κ×30
-- [x] Aligned N=98 scaling audit — 20 domains, 20/20 wins, 5.08× ratio
-- [x] Aligned N=98 rollout audit — 3 domains, comparable fidelity to N=48
-- [x] Converter fixed to align φ/ψ by residue index
-- [x] CLI MVP wrapper — convert, train, rollout, report
-- [x] Product CLI wrapper — doctor, validate-data, kappa-sweep, strong-baseline, temporal-baseline, timewarp-comparison, report
-- [x] Editable package metadata — `pip install -e .` exposes `alphadynamics`
-- [x] v1 preprint package prepared — aligned 20+20 NLL and 3+3 rollout audit
-- [x] 3-domain, 3-seed residual baseline sanity check — 9/9 PhaseFlow wins
-- [ ] Remaining N≈50 aligned rerun domains, if raw H5 files are downloaded
-- [x] Temporal GRU baseline audit on 3-domain × 3-seed subset (9/9 wins)
-- [x] AlphaDynamics shared-dataset audit on public Timewarp tetrapeptides
-- [x] Direct head-to-head vs Microsoft Timewarp 4AA model (3/3 wins, 25× closer JSD with calibrated κ×1)
-- [x] Rollout κ calibration sweep — calibrated optimum κ×1
+- [x] v2 preprint (2026-04-29) on Zenodo, DOI [10.5281/zenodo.19877815](https://doi.org/10.5281/zenodo.19877815)
+- [x] v0.3.0 sequence-only product release (2026-05-01) — `pip install alphadynamics`
+- [x] Aligned mdCATH N≈50 benchmark — 20 domains, 20/20 wins
+- [x] Aligned mdCATH N=98 scaling audit — 20 domains, 5.08× ratio
+- [x] Aligned N=98 rollout audit — comparable fidelity to N=48
+- [x] Head-to-head vs Microsoft Timewarp 4AA — 3/3 wins (per-system, calibrated κ×1)
+- [x] Sequence-only head-to-head vs Microsoft Timewarp 4AA — 3/3 wins (transferable, v0.3.0)
 - [x] Statistical tests on aligned audit (Wilcoxon, bootstrap CI, AR(1) baseline)
 - [x] Anchored JSD reference scale vs floor / uniform / AR(1) / MLP rollout
 - [x] K-sweep ablation on mixture components
-- [ ] Full 40-domain temporal GRU baseline audit
+- [x] Editable package metadata — `pip install -e .` exposes `alphadynamics`
 - [ ] Bivariate von Mises head (Singh et al. 2002)
 - [ ] Kinetic observables (residence times, MFPT)
 - [ ] Scaling to N=150, N=200 residues
@@ -395,6 +409,8 @@ of torus dynamics** with minimal parameters and ODE-based inductive bias.
 - [ ] arXiv preprint
 - [ ] NeurIPS ML4Sci / ICLR workshop submission
 
+---
+
 ## Data
 
 Raw mdCATH trajectories are not committed (3.3 TB total, 200 MB per
@@ -402,15 +418,27 @@ domain). See `data/README.md` for download instructions via Hugging Face
 `compsciencelab/mdCATH` and for the aligned `.npz` file format used by the
 audited benchmarks.
 
+---
+
 ## License
 
-Source code is licensed under the Apache License 2.0; see `LICENSE`.
+Source code is licensed under the Apache License 2.0; see [LICENSE](LICENSE).
+Author and lineage attribution is in [NOTICE](NOTICE) — please preserve it
+in any redistribution or derivative work, as required by Section 4 of the
+Apache 2.0 license.
+
 The manuscript, paper figures, result tables, and documentation are licensed
-under CC BY 4.0; see `LICENSE-MANUSCRIPT.md`.
+under CC BY 4.0; see [LICENSE-MANUSCRIPT.md](LICENSE-MANUSCRIPT.md).
+
+---
 
 ## Citation
 
-Please cite the Zenodo v2 preprint:
+If you use AlphaDynamics in academic work, please cite the relevant release.
+A `CITATION.cff` file is included so GitHub's "Cite this repository" button
+generates the right entry automatically.
+
+**For the v2 paper (per-system, peer-reviewable preprint):**
 
 ```bibtex
 @misc{gwozdz2026alphadynamics,
@@ -424,3 +452,41 @@ Please cite the Zenodo v2 preprint:
   url          = {https://doi.org/10.5281/zenodo.19877815}
 }
 ```
+
+**For the v0.3.0 sequence-only product release:**
+
+```bibtex
+@software{gwozdz2026alphadynamicsproduct,
+  author  = {Gwozdz, Krzysztof},
+  title   = {AlphaDynamics: Compact sequence-only neural propagator
+             for protein torsion dynamics},
+  year    = {2026},
+  url     = {https://github.com/krisss0mecom/AlphaDynamics},
+  license = {Apache-2.0},
+  version = {0.3.0}
+}
+```
+
+---
+
+## Author
+
+**Krzysztof Gwozdz** — independent researcher, Poland
+<krisss0gwo@gmail.com>
+
+AlphaDynamics is the protein-dynamics application of a multi-year research
+program on phase-oscillator computation across hardware (REZON), formal
+phase computing, and neuroscience. See [NOTICE](NOTICE) for the full
+research lineage.
+
+This project is released as a gift to the protein-dynamics community.
+
+---
+
+## Acknowledgements
+
+- Microsoft Research's Timewarp paper and codebase, used as the
+  comparison baseline.
+- The mdCATH consortium for long-timescale MD trajectories.
+- The 4AA-large test set from `microsoft/timewarp` used in the canonical
+  benchmark.
