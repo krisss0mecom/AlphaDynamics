@@ -171,7 +171,106 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
+    """Interactive prompt — what most users want when they just type `alphadynamics`."""
+    print()
+    print("Welcome! I'll help you predict torsion dynamics for any peptide.")
+    print("Press Ctrl+C any time to cancel.")
+    print()
+
+    try:
+        from .api import predict_torsion_ensemble
+        from .weights import available_models
+
+        seq = ""
+        while not seq:
+            seq = input("Sequence (1-letter AA, e.g. AAAY): ").strip().upper()
+            if not seq:
+                print("  (please enter at least one residue)")
+            elif len(seq) > 200:
+                print("  (warning: model trained on 4-98 residues; >200 may be unreliable)")
+
+        ne_str = input("How many independent trajectories? [16]: ").strip() or "16"
+        rs_str = input("How many timesteps per trajectory? [2500]: ").strip() or "2500"
+        dev_in = input("Device (cuda/cpu/auto) [auto]: ").strip().lower() or "auto"
+        out_default = f"alphadynamics_{seq}_torsions.npz"
+        out_path = input(f"Output file [{out_default}]: ").strip() or out_default
+
+        try:
+            n_ensemble = int(ne_str)
+            rollout_steps = int(rs_str)
+        except ValueError:
+            print("ERROR: ensemble size and timesteps must be integers.")
+            return 1
+
+        device = None if dev_in == "auto" else dev_in
+
+        print()
+        print(f"Predicting torsions for {seq!r}: "
+              f"{n_ensemble} trajectories x {rollout_steps} steps "
+              f"on {device or 'auto'}...")
+        print()
+
+        traj = predict_torsion_ensemble(
+            seq,
+            n_ensemble=n_ensemble,
+            rollout_steps=rollout_steps,
+            seed=42,
+            device=device,
+            show_progress=True,
+        )
+
+        import math
+        import numpy as np
+
+        np.savez_compressed(
+            out_path,
+            sequence=seq,
+            torsions=traj,
+            torsion_units="radians",
+            torsion_axes="(ensemble, time, residues, [phi, psi])",
+            n_ensemble=n_ensemble,
+            rollout_steps=rollout_steps,
+            model_name="ad_transfer_v2_clean",
+            alphadynamics_version=__version__,
+        )
+
+        print(f"\nWrote {out_path}")
+        print(f"Trajectory shape: {traj.shape}  (ensemble, time, residues, [phi,psi] rad)")
+        print()
+
+        # Quick basin analysis on the spot
+        phi = np.degrees(traj[..., 0].flatten())
+        psi = np.degrees(traj[..., 1].flatten())
+
+        def _b(plo, phi_, slo, shi):
+            return float(((phi >= plo) & (phi <= phi_) & (psi >= slo) & (psi <= shi)).mean()) * 100.0
+
+        print("Ramachandran basin populations:")
+        print(f"  alpha-helix R     (phi ~-60, psi ~-45):  {_b(-130,-30,-90,30):.1f}%")
+        print(f"  beta-sheet        (phi ~-120, psi ~120): {_b(-180,-90,70,180):.1f}%")
+        print(f"  PPII extended     (phi ~-60, psi ~140):  {_b(-90,-30,100,180):.1f}%")
+        print(f"  alpha-helix L     (sterically forbidden): {_b(30,100,-10,90):.1f}%")
+        print()
+        print("Tip: load in Python with")
+        print(f"    import numpy as np")
+        print(f"    d = np.load('{out_path}', allow_pickle=True)")
+        print(f"    traj = d['torsions']  # shape {traj.shape}")
+        return 0
+
+    except (KeyboardInterrupt, EOFError):
+        print("\nCancelled.")
+        return 130
+
+
 def main(argv: list[str] | None = None) -> int:
+    # No subcommand at all → friendly interactive mode (what most users expect
+    # when they just type `alphadynamics`).
+    if argv is None and len(sys.argv) == 1:
+        return _cmd_interactive()
+    if argv is not None and len(argv) == 0:
+        return _cmd_interactive()
+
     parser = _build_parser()
     args = parser.parse_args(argv)
     return int(args.func(args))
