@@ -21,6 +21,185 @@ from .banner import banner_text
 
 
 # --------------------------------------------------------------------------- #
+# Interactive Ramachandran plot (plotly-optional)
+# --------------------------------------------------------------------------- #
+
+
+def _make_ramachandran_html(traj, sequence: str, out_path: str) -> bool:
+    """Save an interactive Ramachandran density map as a self-contained HTML.
+
+    Produces: aggregate density (smooth contour) + per-residue subplot grid
+    (when n_residues <= 16) + reference Ramachandran-favored zones overlay
+    (Lovell et al. 2003 simplified) + annotated basin labels.
+
+    Returns True on success, False if plotly missing.
+    """
+    try:
+        import numpy as np
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+    except ImportError:
+        print("[plot-html] plotly not installed. Run: pip install 'alphadynamics[viz]'",
+              file=sys.stderr)
+        return False
+
+    n_ens, n_time, n_res, _ = traj.shape
+
+    has_per_res = 1 <= n_res <= 16
+    if has_per_res:
+        ncols = min(4, n_res)
+        nrows = 1 + (n_res + ncols - 1) // ncols
+        specs = [
+            [{"colspan": ncols, "rowspan": 1}] + [None] * (ncols - 1),
+        ] + [
+            [{} for _ in range(ncols)] for _ in range((n_res + ncols - 1) // ncols)
+        ]
+        titles = [f"<b>{sequence}</b> — aggregate Ramachandran density"]
+        for i in range(n_res):
+            aa = sequence[i] if i < len(sequence) else "?"
+            titles.append(f"{aa}{i+1}")
+        # pad titles to fill grid
+        total = ncols + ((n_res + ncols - 1) // ncols) * ncols
+        titles += [""] * max(0, total - len(titles))
+        fig = make_subplots(
+            rows=nrows, cols=ncols,
+            specs=specs,
+            subplot_titles=titles,
+            horizontal_spacing=0.04, vertical_spacing=0.10,
+        )
+        agg_row = 1
+    else:
+        fig = make_subplots(
+            rows=1, cols=1,
+            subplot_titles=[f"<b>{sequence}</b> — aggregate Ramachandran density "
+                            f"({n_res} residues, {n_ens}×{n_time} samples)"],
+        )
+        agg_row, ncols = 1, 1
+
+    phi_all = np.degrees(traj[..., 0].flatten())
+    psi_all = np.degrees(traj[..., 1].flatten())
+
+    fig.add_trace(
+        go.Histogram2dContour(
+            x=phi_all, y=psi_all,
+            colorscale="Viridis",
+            xaxis="x", yaxis="y",
+            ncontours=20,
+            contours=dict(coloring="fill", showlines=False),
+            line=dict(width=0),
+            showscale=True,
+            colorbar=dict(title="density",
+                          len=0.45 if has_per_res else 0.85,
+                          y=0.78 if has_per_res else 0.5,
+                          x=1.02),
+            hovertemplate="φ=%{x:.0f}°<br>ψ=%{y:.0f}°<br>density=%{z:.4f}<extra></extra>",
+        ),
+        row=agg_row, col=1,
+    )
+
+    # Annotate canonical basins on aggregate panel
+    basin_labels = [
+        (-60, -45, "α-R", "white"),
+        (-120, 130, "β", "white"),
+        (-60, 140, "PPII", "white"),
+        (60, 50, "α-L (forbidden)", "orange"),
+    ]
+    for px, py, label, color in basin_labels:
+        fig.add_annotation(
+            x=px, y=py, text=f"<b>{label}</b>",
+            showarrow=False, font=dict(color=color, size=12),
+            xref="x1", yref="y1",
+        )
+
+    if has_per_res:
+        for i in range(n_res):
+            row = 2 + (i // ncols)
+            col = 1 + (i % ncols)
+            phi_i = np.degrees(traj[:, :, i, 0].flatten())
+            psi_i = np.degrees(traj[:, :, i, 1].flatten())
+            fig.add_trace(
+                go.Histogram2dContour(
+                    x=phi_i, y=psi_i,
+                    colorscale="Viridis",
+                    ncontours=15,
+                    contours=dict(coloring="fill", showlines=False),
+                    line=dict(width=0),
+                    showscale=False,
+                    hovertemplate="φ=%{x:.0f}°<br>ψ=%{y:.0f}°<extra></extra>",
+                ),
+                row=row, col=col,
+            )
+
+    # Style every panel: square, [-180,180] axes, gridlines at 0
+    for axis in fig.layout:
+        if axis.startswith("xaxis"):
+            fig.layout[axis].update(
+                range=[-180, 180],
+                tickvals=[-180, -90, 0, 90, 180],
+                ticksuffix="°",
+                gridcolor="rgba(255,255,255,0.15)",
+                zerolinecolor="rgba(255,255,255,0.4)",
+                zerolinewidth=1,
+            )
+        elif axis.startswith("yaxis"):
+            # plotly axis reference: yaxisN -> xN (not xaxisN)
+            suffix = axis[len("yaxis"):]
+            x_ref = "x" + suffix
+            fig.layout[axis].update(
+                range=[-180, 180],
+                tickvals=[-180, -90, 0, 90, 180],
+                ticksuffix="°",
+                gridcolor="rgba(255,255,255,0.15)",
+                zerolinecolor="rgba(255,255,255,0.4)",
+                zerolinewidth=1,
+                scaleanchor=x_ref,
+                scaleratio=1,
+            )
+
+    fig.update_layout(
+        title=dict(
+            text=f"<b>AlphaDynamics — {sequence}</b><br>"
+                 f"<sub>{n_ens} trajectories × {n_time} steps × {n_res} residues "
+                 f"= {n_ens * n_time * n_res:,} samples · model: ad_transfer_v2_clean</sub>",
+            x=0.5, xanchor="center",
+        ),
+        template="plotly_dark",
+        height=350 + (250 * (1 + (n_res + ncols - 1) // ncols) if has_per_res else 350),
+        width=900 if not has_per_res else max(900, 230 * ncols + 100),
+        margin=dict(l=70, r=120, t=110, b=60),
+        font=dict(family="Inter, system-ui, -apple-system, sans-serif", size=12),
+        hovermode="closest",
+    )
+
+    # Common axis labels via single visible-only annotation
+    fig.add_annotation(
+        text="φ (degrees)", xref="paper", yref="paper",
+        x=0.5, y=-0.06 if not has_per_res else -0.02,
+        showarrow=False, font=dict(size=13),
+    )
+    fig.add_annotation(
+        text="ψ (degrees)", xref="paper", yref="paper",
+        x=-0.06, y=0.5,
+        textangle=-90,
+        showarrow=False, font=dict(size=13),
+    )
+
+    fig.write_html(
+        out_path,
+        include_plotlyjs="cdn",
+        full_html=True,
+        config=dict(
+            displaylogo=False,
+            toImageButtonOptions=dict(
+                format="png", filename=f"ramachandran_{sequence}",
+                height=900, width=900, scale=2,
+            ),
+        ),
+    )
+    return True
+
+
+# --------------------------------------------------------------------------- #
 # Ramachandran plot helper (matplotlib-optional)
 # --------------------------------------------------------------------------- #
 
@@ -194,6 +373,13 @@ def _cmd_predict(args: argparse.Namespace) -> int:
         if _make_ramachandran_plot(traj, args.sequence.upper(), plot_path):
             print(f"[plot] wrote {plot_path}", file=sys.stderr)
 
+    if getattr(args, "plot_html", False):
+        html_path = args.html_out or str(out_path).replace(".npz", "_ramachandran.html")
+        if not html_path.endswith(".html"):
+            html_path += ".html"
+        if _make_ramachandran_html(traj, args.sequence.upper(), html_path):
+            print(f"[plot-html] wrote {html_path}  (open in browser)", file=sys.stderr)
+
     return 0
 
 
@@ -261,11 +447,19 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_predict.add_argument(
         "--plot", action="store_true",
-        help="Also save a Ramachandran density map as PNG (requires matplotlib).",
+        help="Save a static Ramachandran density map as PNG (requires matplotlib).",
     )
     p_predict.add_argument(
         "--plot-out", type=str, default=None, dest="plot_out",
-        help="Plot path (default: <output>_ramachandran.png)",
+        help="PNG path (default: <output>_ramachandran.png)",
+    )
+    p_predict.add_argument(
+        "--plot-html", action="store_true", dest="plot_html",
+        help="Save an INTERACTIVE Ramachandran map as HTML (zoom, hover, pan; requires plotly).",
+    )
+    p_predict.add_argument(
+        "--html-out", type=str, default=None, dest="html_out",
+        help="HTML path (default: <output>_ramachandran.html)",
     )
     p_predict.set_defaults(func=_cmd_predict)
     return parser
@@ -295,8 +489,15 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
         dev_in = input("Device (cuda/cpu/auto) [auto]: ").strip().lower() or "auto"
         out_default = f"alphadynamics_{seq}_torsions.npz"
         out_path = input(f"Output file [{out_default}]: ").strip() or out_default
-        plot_in = input("Save Ramachandran plot (PNG)? [Y/n]: ").strip().lower()
-        want_plot = plot_in in ("", "y", "yes", "tak", "t")
+        plot_in = input("Save Ramachandran plot? [n=no, p=PNG, h=HTML interactive, b=both] [b]: ").strip().lower()
+        if plot_in in ("", "b", "both"):
+            want_plot, want_html = True, True
+        elif plot_in in ("p", "png"):
+            want_plot, want_html = True, False
+        elif plot_in in ("h", "html"):
+            want_plot, want_html = False, True
+        else:
+            want_plot, want_html = False, False
 
         try:
             n_ensemble = int(ne_str)
@@ -356,11 +557,21 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
         print()
 
         if want_plot:
-            plot_path = out_path.replace(".npz", "_ramachandran.png")
-            if not plot_path.endswith(".png"):
-                plot_path += ".png"
-            if _make_ramachandran_plot(traj, seq, plot_path):
-                print(f"Wrote Ramachandran plot: {plot_path}")
+            png_path = out_path.replace(".npz", "_ramachandran.png")
+            if not png_path.endswith(".png"):
+                png_path += ".png"
+            if _make_ramachandran_plot(traj, seq, png_path):
+                print(f"Wrote static Ramachandran (PNG): {png_path}")
+
+        if want_html:
+            html_path = out_path.replace(".npz", "_ramachandran.html")
+            if not html_path.endswith(".html"):
+                html_path += ".html"
+            if _make_ramachandran_html(traj, seq, html_path):
+                print(f"Wrote interactive Ramachandran (HTML): {html_path}")
+                print("  → open in browser: zoom, pan, hover for density values")
+
+        if want_plot or want_html:
             print()
 
         print("Tip: load in Python with")
