@@ -113,10 +113,28 @@ def build_features(
     if use_sequence:
         if residue_ids is None:
             aa = torch.full((n_res,), N_AA_WITH_UNKNOWN - 1, dtype=torch.long, device=device)
+            one_hot = F.one_hot(aa, num_classes=N_AA_WITH_UNKNOWN).float()
+            feats.append(
+                one_hot.view(1, n_res, N_AA_WITH_UNKNOWN).expand(bsz, n_res, N_AA_WITH_UNKNOWN)
+            )
         else:
-            aa = residue_ids.to(device=device, dtype=torch.long)[:n_res]
-        one_hot = F.one_hot(aa, num_classes=N_AA_WITH_UNKNOWN).float()
-        feats.append(one_hot.view(1, n_res, N_AA_WITH_UNKNOWN).expand(bsz, n_res, N_AA_WITH_UNKNOWN))
+            rid = residue_ids.to(device=device, dtype=torch.long)
+            if rid.ndim == 1:
+                aa = rid[:n_res]
+                one_hot = F.one_hot(aa, num_classes=N_AA_WITH_UNKNOWN).float()
+                feats.append(
+                    one_hot.view(1, n_res, N_AA_WITH_UNKNOWN).expand(bsz, n_res, N_AA_WITH_UNKNOWN)
+                )
+            elif rid.ndim == 2:
+                aa = rid[:, :n_res]
+                one_hot = F.one_hot(aa, num_classes=N_AA_WITH_UNKNOWN).float()
+                if one_hot.shape[0] == 1 and bsz != 1:
+                    one_hot = one_hot.expand(bsz, n_res, N_AA_WITH_UNKNOWN)
+                feats.append(one_hot)
+            else:
+                raise ValueError(
+                    f"residue_ids must have shape (N,) or (B, N); got {tuple(rid.shape)}"
+                )
     if use_temperature:
         if temperature is None:
             temperature = torch.zeros((bsz, n_res, 1), dtype=angles.dtype, device=device)
