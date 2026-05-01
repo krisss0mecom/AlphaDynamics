@@ -21,6 +21,90 @@ from .banner import banner_text
 
 
 # --------------------------------------------------------------------------- #
+# Ramachandran plot helper (matplotlib-optional)
+# --------------------------------------------------------------------------- #
+
+
+def _make_ramachandran_plot(traj, sequence: str, out_path: str) -> bool:
+    """Save a Ramachandran density map (plus per-residue panels for short peptides).
+
+    Returns True on success, False if matplotlib is missing.
+    """
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError:
+        print("[plot] matplotlib not installed. Run: pip install 'alphadynamics[viz]'",
+              file=sys.stderr)
+        return False
+
+    n_ens, n_time, n_res, _ = traj.shape
+    phi_all = np.degrees(traj[..., 0].flatten())
+    psi_all = np.degrees(traj[..., 1].flatten())
+
+    has_per_res = 1 <= n_res <= 16
+
+    if has_per_res:
+        ncols = min(4, n_res)
+        nrows_pp = (n_res + ncols - 1) // ncols
+        fig = plt.figure(figsize=(6 + 2.0 * ncols, max(6, 2.0 * nrows_pp) + 0.5))
+        gs = fig.add_gridspec(nrows_pp, ncols + 2, width_ratios=[3, 0.05] + [1] * ncols)
+        ax_main = fig.add_subplot(gs[:, 0])
+    else:
+        fig, ax_main = plt.subplots(figsize=(7.5, 6.5))
+
+    h = ax_main.hist2d(
+        phi_all, psi_all,
+        bins=72,
+        range=[[-180, 180], [-180, 180]],
+        cmap="viridis",
+        density=True,
+    )
+    ax_main.axhline(0, color="white", lw=0.5, alpha=0.3)
+    ax_main.axvline(0, color="white", lw=0.5, alpha=0.3)
+    # Basin labels
+    ax_main.text(-60, -45, "α-R",   ha="center", color="white", fontsize=12, fontweight="bold")
+    ax_main.text(-120, 130, "β",    ha="center", color="white", fontsize=12, fontweight="bold")
+    ax_main.text(-60, 140, "PPII",  ha="center", color="white", fontsize=11, fontweight="bold")
+    ax_main.text(60, 50, "α-L (forbidden)",
+                 ha="center", color="orange", fontsize=8, alpha=0.7)
+    ax_main.set_xlabel("φ (degrees)")
+    ax_main.set_ylabel("ψ (degrees)")
+    ax_main.set_xlim(-180, 180)
+    ax_main.set_ylim(-180, 180)
+    ax_main.set_xticks([-180, -90, 0, 90, 180])
+    ax_main.set_yticks([-180, -90, 0, 90, 180])
+    ax_main.set_aspect("equal")
+    ax_main.set_title(
+        f"AlphaDynamics — {sequence}  ({n_res} residues, {n_ens}×{n_time} samples)"
+    )
+    fig.colorbar(h[3], ax=ax_main, fraction=0.046, pad=0.04, label="density")
+
+    # Per-residue panels
+    if has_per_res:
+        for i in range(n_res):
+            row, col = divmod(i, ncols)
+            ax_i = fig.add_subplot(gs[row, 2 + col])
+            phi_i = np.degrees(traj[:, :, i, 0].flatten())
+            psi_i = np.degrees(traj[:, :, i, 1].flatten())
+            ax_i.hist2d(phi_i, psi_i, bins=36,
+                        range=[[-180, 180], [-180, 180]],
+                        cmap="viridis", density=True)
+            ax_i.set_xlim(-180, 180); ax_i.set_ylim(-180, 180)
+            ax_i.set_xticks([]); ax_i.set_yticks([])
+            ax_i.set_aspect("equal")
+            aa = sequence[i] if i < len(sequence) else "?"
+            ax_i.set_title(f"{aa}{i+1}", fontsize=9)
+
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=130, bbox_inches="tight")
+    plt.close(fig)
+    return True
+
+
+# --------------------------------------------------------------------------- #
 # Subcommands
 # --------------------------------------------------------------------------- #
 
@@ -102,6 +186,14 @@ def _cmd_predict(args: argparse.Namespace) -> int:
         alphadynamics_version=__version__,
     )
     print(f"[predict] wrote {out_path}", file=sys.stderr)
+
+    if getattr(args, "plot", False):
+        plot_path = args.plot_out or str(out_path).replace(".npz", "_ramachandran.png")
+        if not plot_path.endswith(".png"):
+            plot_path += ".png"
+        if _make_ramachandran_plot(traj, args.sequence.upper(), plot_path):
+            print(f"[plot] wrote {plot_path}", file=sys.stderr)
+
     return 0
 
 
@@ -167,6 +259,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "--output", "-o", type=str, default=None,
         help="Output .npz path (default: alphadynamics_<SEQ>_torsions.npz)",
     )
+    p_predict.add_argument(
+        "--plot", action="store_true",
+        help="Also save a Ramachandran density map as PNG (requires matplotlib).",
+    )
+    p_predict.add_argument(
+        "--plot-out", type=str, default=None, dest="plot_out",
+        help="Plot path (default: <output>_ramachandran.png)",
+    )
     p_predict.set_defaults(func=_cmd_predict)
     return parser
 
@@ -195,6 +295,8 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
         dev_in = input("Device (cuda/cpu/auto) [auto]: ").strip().lower() or "auto"
         out_default = f"alphadynamics_{seq}_torsions.npz"
         out_path = input(f"Output file [{out_default}]: ").strip() or out_default
+        plot_in = input("Save Ramachandran plot (PNG)? [Y/n]: ").strip().lower()
+        want_plot = plot_in in ("", "y", "yes", "tak", "t")
 
         try:
             n_ensemble = int(ne_str)
@@ -252,6 +354,15 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
         print(f"  PPII extended     (phi ~-60, psi ~140):  {_b(-90,-30,100,180):.1f}%")
         print(f"  alpha-helix L     (sterically forbidden): {_b(30,100,-10,90):.1f}%")
         print()
+
+        if want_plot:
+            plot_path = out_path.replace(".npz", "_ramachandran.png")
+            if not plot_path.endswith(".png"):
+                plot_path += ".png"
+            if _make_ramachandran_plot(traj, seq, plot_path):
+                print(f"Wrote Ramachandran plot: {plot_path}")
+            print()
+
         print("Tip: load in Python with")
         print(f"    import numpy as np")
         print(f"    d = np.load('{out_path}', allow_pickle=True)")
