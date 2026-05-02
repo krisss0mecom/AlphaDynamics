@@ -21,6 +21,70 @@ from .banner import banner_text
 
 
 # --------------------------------------------------------------------------- #
+# Output path helpers (cross-platform writability check + auto-fallback)
+# --------------------------------------------------------------------------- #
+
+
+def _writable_dir(path: Path) -> bool:
+    """Probe whether we can create a file under `path`. Cleans up after itself."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / f".alphadynamics_write_probe_{os.getpid()}"
+        probe.touch()
+        probe.unlink()
+        return True
+    except (PermissionError, OSError):
+        return False
+
+
+def _safe_output_path(requested: str | Path, default_basename: str) -> Path:
+    """Return a path we are guaranteed to be able to write to.
+
+    Tries (in order):
+    1. The requested path.
+    2. ~/Documents/ (Windows-friendly default that is always writable).
+    3. ~/  (home dir).
+    4. tempfile.gettempdir().
+
+    Prints a friendly note (to stderr) if it falls back, so the user
+    always knows where the file landed.
+    """
+    import tempfile
+
+    requested = Path(requested).expanduser()
+    parent = requested.parent if requested.parent != Path("") else Path(".")
+
+    # Resolve "." to an absolute path so error messages are useful
+    try:
+        parent_resolved = parent.resolve()
+    except Exception:
+        parent_resolved = parent
+
+    if _writable_dir(parent_resolved):
+        return requested
+
+    candidates = [
+        Path.home() / "Documents",
+        Path.home(),
+        Path(tempfile.gettempdir()),
+    ]
+    for cand in candidates:
+        if _writable_dir(cand):
+            fallback = cand / Path(requested.name or default_basename)
+            print(
+                f"[alphadynamics] cannot write to {parent_resolved!s} "
+                f"(no permission). Saving to {fallback!s} instead.",
+                file=sys.stderr,
+            )
+            return fallback
+
+    raise PermissionError(
+        f"No writable location found. Tried: {requested!s}, "
+        f"~/Documents, ~/, and {tempfile.gettempdir()!r}."
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Interactive Ramachandran plot (plotly-optional)
 # --------------------------------------------------------------------------- #
 
@@ -329,10 +393,16 @@ def _cmd_predict(args: argparse.Namespace) -> int:
 
     from .api import predict_torsion_ensemble
 
-    out_path = Path(args.output) if args.output else None
+    seq_upper = args.sequence.upper()
+    requested = args.output or f"alphadynamics_{seq_upper}_torsions.npz"
+    # Pre-flight: bail BEFORE running predict if the chosen path is not writable.
+    # The model run is expensive; we don't want to waste it on a write error
+    # at the end (Windows users hitting this on C:\ root, for example).
+    out_path = _safe_output_path(requested, f"alphadynamics_{seq_upper}_torsions.npz")
 
     print(f"[predict] sequence={args.sequence!r}  n_ensemble={args.n_ensemble}  "
           f"rollout_steps={args.rollout_steps}  model={args.model}", file=sys.stderr)
+    print(f"[predict] will save to: {out_path}", file=sys.stderr)
 
     traj = predict_torsion_ensemble(
         args.sequence,
@@ -349,13 +419,9 @@ def _cmd_predict(args: argparse.Namespace) -> int:
     print(f"[predict] output shape={traj.shape}  (ensemble, time, residues, [phi,psi] rad)",
           file=sys.stderr)
 
-    if out_path is None:
-        # Default destination
-        out_path = Path(f"alphadynamics_{args.sequence.upper()}_torsions.npz")
-
     np.savez_compressed(
         out_path,
-        sequence=args.sequence.upper(),
+        sequence=seq_upper,
         torsions=traj,
         torsion_units="radians",
         torsion_axes="(ensemble, time, residues, [phi, psi])",
@@ -367,17 +433,19 @@ def _cmd_predict(args: argparse.Namespace) -> int:
     print(f"[predict] wrote {out_path}", file=sys.stderr)
 
     if getattr(args, "plot", False):
-        plot_path = args.plot_out or str(out_path).replace(".npz", "_ramachandran.png")
-        if not plot_path.endswith(".png"):
-            plot_path += ".png"
-        if _make_ramachandran_plot(traj, args.sequence.upper(), plot_path):
+        requested_png = args.plot_out or str(out_path).replace(".npz", "_ramachandran.png")
+        if not requested_png.endswith(".png"):
+            requested_png += ".png"
+        plot_path = _safe_output_path(requested_png, f"alphadynamics_{seq_upper}_ramachandran.png")
+        if _make_ramachandran_plot(traj, seq_upper, str(plot_path)):
             print(f"[plot] wrote {plot_path}", file=sys.stderr)
 
     if getattr(args, "plot_html", False):
-        html_path = args.html_out or str(out_path).replace(".npz", "_ramachandran.html")
-        if not html_path.endswith(".html"):
-            html_path += ".html"
-        if _make_ramachandran_html(traj, args.sequence.upper(), html_path):
+        requested_html = args.html_out or str(out_path).replace(".npz", "_ramachandran.html")
+        if not requested_html.endswith(".html"):
+            requested_html += ".html"
+        html_path = _safe_output_path(requested_html, f"alphadynamics_{seq_upper}_ramachandran.html")
+        if _make_ramachandran_html(traj, seq_upper, str(html_path)):
             print(f"[plot-html] wrote {html_path}  (open in browser)", file=sys.stderr)
 
     return 0
@@ -506,12 +574,20 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
             print("ERROR: ensemble size and timesteps must be integers.")
             return 1
 
+        # Pre-flight: verify we can write BEFORE running predict.
+        # The model run takes minutes and we don't want to lose it on
+        # PermissionError at the end (Windows users running from C:\ root).
+        safe_npz = _safe_output_path(out_path, f"alphadynamics_{seq}_torsions.npz")
+        if str(safe_npz) != str(out_path):
+            out_path = str(safe_npz)
+
         device = None if dev_in == "auto" else dev_in
 
         print()
         print(f"Predicting torsions for {seq!r}: "
               f"{n_ensemble} trajectories x {rollout_steps} steps "
               f"on {device or 'auto'}...")
+        print(f"Will save to: {out_path}")
         print()
 
         traj = predict_torsion_ensemble(
