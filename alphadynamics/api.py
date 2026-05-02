@@ -96,25 +96,43 @@ def predict_torsion_ensemble(
     rng = np.random.default_rng(seed)
     output = np.empty((n_ensemble, rollout_steps, n_res, 2), dtype=np.float32)
 
-    for k in range(n_ensemble):
-        seed_frame = _seed_frame(n_res, rng)
-        traj = rollout(
-            model,
-            seed_frame,
-            n_steps=rollout_steps,
-            device=device_t,
-            sequence=seq,
-            kappa_mult=kappa_mult,
-            greedy=False,
-            temperature_K=temperature_K,
-        )
-        output[k] = traj
-        if show_progress:
-            import sys
-            sys.stderr.write(f"\r  rollout {k + 1}/{n_ensemble}")
-            sys.stderr.flush()
+    total_steps = n_ensemble * rollout_steps
+
     if show_progress:
-        import sys
-        sys.stderr.write("\n")
+        from tqdm import tqdm
+        pbar = tqdm(
+            total=total_steps,
+            desc=f"  predict {seq}",
+            unit="step",
+            unit_scale=False,
+            dynamic_ncols=True,
+            mininterval=0.2,
+            smoothing=0.1,
+            bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} "
+                       "[{elapsed}<{remaining}, {rate_fmt}]",
+        )
+        progress_callback = lambda n=1: pbar.update(n)
+    else:
+        pbar = None
+        progress_callback = None
+
+    try:
+        for k in range(n_ensemble):
+            seed_frame = _seed_frame(n_res, rng)
+            traj = rollout(
+                model,
+                seed_frame,
+                n_steps=rollout_steps,
+                device=device_t,
+                sequence=seq,
+                kappa_mult=kappa_mult,
+                greedy=False,
+                temperature_K=temperature_K,
+                progress_callback=progress_callback,
+            )
+            output[k] = traj
+    finally:
+        if pbar is not None:
+            pbar.close()
 
     return output

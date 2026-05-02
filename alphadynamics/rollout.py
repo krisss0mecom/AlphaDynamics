@@ -18,7 +18,14 @@ def rollout(
     kappa_mult: float = 1.0,
     greedy: bool = False,
     temperature_K: float | None = None,
+    progress_callback=None,
 ) -> np.ndarray:
+    """Autoregressive rollout from a single seed frame.
+
+    progress_callback: optional callable invoked with `1` after each step.
+        Used by the CLI to drive a tqdm progress bar across all ensemble
+        members. Internal loop is unchanged.
+    """
     model.eval()
     state = as_tensor(seed_frame[None], device)
     res_ids = residue_ids(sequence, seed_frame.shape[0], device)
@@ -33,6 +40,8 @@ def rollout(
             greedy=greedy,
         )
         out[i] = state[0].detach().cpu().numpy()
+        if progress_callback is not None:
+            progress_callback(1)
     return out
 
 
