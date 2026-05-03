@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import os as _os
 
-__version__ = "0.3.7"
+__version__ = "0.3.8"
 __author__ = "Krzysztof Gwozdz"
 __email__ = "krisss0gwo@gmail.com"
 __license__ = "Apache-2.0"
@@ -65,4 +65,12 @@ if (
         _os.environ[_BANNER_SHOWN_FLAG] = "1"
     except Exception:
         # Never let banner crash the import
+        pass
+
+    # Background-style update check (cached 24h, 2s timeout, never blocks)
+    try:
+        from .version_check import check_for_update as _check_for_update
+        _check_for_update()
+    except Exception:
+        # Never let version check crash the import
         pass

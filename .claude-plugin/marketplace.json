@@ -10,7 +10,7 @@
       "name": "alphadynamics",
       "source": "./plugins/alphadynamics",
       "description": "Predict torsion-angle ensembles for any peptide sequence using AlphaDynamics — natural-language interface to the alphadynamics pip package.",
-      "version": "0.3.7",
+      "version": "0.3.8",
       "author": {
         "name": "Krzysztof Gwozdz",
         "email": "krisss0gwo@gmail.com"
