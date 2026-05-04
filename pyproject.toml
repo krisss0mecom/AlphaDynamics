@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alphadynamics"
-version = "0.3.8"
+version = "0.3.9"
 description = "Compact sequence-only neural propagator for protein torsion dynamics — 2.39× lower JSD than Microsoft Timewarp at 3000× fewer parameters."
 readme = "README.md"
 requires-python = ">=3.10"

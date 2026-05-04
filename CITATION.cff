@@ -27,8 +27,8 @@ keywords:
   - torsion angles
   - ramachandran
   - reservoir computing
-version: "0.3.8"
-date-released: 2026-05-02
+version: "0.3.9"
+date-released: 2026-05-04
 
 # Concept DOI (always points to latest version on Zenodo)
 identifiers:

@@ -31,6 +31,35 @@ def _read_sequence(npz) -> str | None:
     return None
 
 
+def align_sequence_to_residues(
+    full_sequence: str,
+    n_residues: int,
+    residue_indices: Iterable[int] | None = None,
+) -> str:
+    """Return the sequence aligned to the stored torsion residues.
+
+    Some sequence manifests store full protein/domain sequences, while others
+    already store the exact torsion-residue subsequence. The latter must not
+    be sliced a second time by ``residue_indices``; doing so shifts N=98
+    mdCATH sequences by one residue and appends ``X`` at the end.
+    """
+    seq = str(full_sequence)
+    if len(seq) == n_residues:
+        return seq
+
+    if residue_indices is not None:
+        indices = [int(i) for i in residue_indices]
+        return "".join(seq[i] if 0 <= i < len(seq) else "X" for i in indices)
+
+    if len(seq) > n_residues:
+        raise ValueError(
+            "cannot align a longer sequence without residue_indices; "
+            f"sequence length={len(seq)} torsion residues={n_residues}"
+        )
+
+    return seq[:n_residues]
+
+
 @dataclass
 class ProteinTrajectory:
     domain_id: str
@@ -86,13 +115,13 @@ class ProteinTrajectory:
             entry = sequences_lookup[domain_id]
             full_sequence = entry.get("sequence", "") if isinstance(entry, dict) else str(entry)
             if "residue_indices" in d.files:
-                indices = [int(i) for i in d["residue_indices"]]
-                sequence = "".join(
-                    full_sequence[i] if 0 <= i < len(full_sequence) else "X"
-                    for i in indices
+                sequence = align_sequence_to_residues(
+                    full_sequence,
+                    train.shape[1],
+                    d["residue_indices"],
                 )
             else:
-                sequence = full_sequence[: train.shape[1]]
+                sequence = align_sequence_to_residues(full_sequence, train.shape[1])
         if sequence is not None:
             if len(sequence) < train.shape[1]:
                 sequence = sequence + "X" * (train.shape[1] - len(sequence))

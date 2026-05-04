@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import os as _os
 
-__version__ = "0.3.8"
+__version__ = "0.3.9"
 __author__ = "Krzysztof Gwozdz"
 __email__ = "krisss0gwo@gmail.com"
 __license__ = "Apache-2.0"
@@ -63,6 +63,14 @@ if (
         from .banner import print_banner as _print_banner
         _print_banner()
         _os.environ[_BANNER_SHOWN_FLAG] = "1"
+        try:
+            import sys as _sys
+            _sys.stderr.write(
+                "  NOTE: AlphaDynamics is best validated for short peptides (4-15 aa).\n"
+                "        Sequences longer than 20 aa are outside the calibrated scope.\n\n"
+            )
+        except Exception:
+            pass
     except Exception:
         # Never let banner crash the import
         pass

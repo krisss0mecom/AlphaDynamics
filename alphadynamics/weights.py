@@ -11,6 +11,7 @@ Override the release URL base with ``ALPHADYNAMICS_RELEASE_URL``
 from __future__ import annotations
 
 import hashlib
+import inspect
 import os
 import shutil
 import sys
@@ -196,6 +197,46 @@ def _ensure_cached(spec: WeightSpec) -> Path:
 # --------------------------------------------------------------------------- #
 
 
+def _constructor_config(cls: type[torch.nn.Module], spec_config: dict, *configs: dict) -> dict:
+    """Merge checkpoint configs onto the registry default, keeping only kwargs
+    the model class actually accepts. Registry config wins as the baseline,
+    checkpoint configs may override individual entries when they exist."""
+    cfg = dict(spec_config)
+    for config in configs:
+        if config:
+            cfg.update({k: v for k, v in config.items() if k in cfg})
+
+    allowed = set(inspect.signature(cls).parameters)
+    return {k: v for k, v in cfg.items() if k in allowed}
+
+
+def _state_dict_from_checkpoint(state, spec: WeightSpec) -> tuple[dict, dict, dict]:
+    """Return ``(state_dict, checkpoint_config, args)`` for supported checkpoint layouts.
+
+    Trainer checkpoints can wrap the state dict under ``model_state``,
+    ``state_dict`` or ``model``, with config under ``model_config`` or
+    ``config``. Bare state dicts are also accepted.
+    """
+    if not isinstance(state, dict):
+        return state, {}, {}
+
+    args = state.get("args", {}) if isinstance(state.get("args"), dict) else {}
+
+    if "model_state" in state:
+        return state["model_state"], state.get("model_config", state.get("config", {})), args
+    if "state_dict" in state:
+        return state["state_dict"], state.get("config", state.get("model_config", {})), args
+    if "model" in state:
+        return state["model"], state.get("config", state.get("model_config", {})), args
+
+    if state and all(torch.is_tensor(v) for v in state.values()):
+        return state, {}, args
+
+    raise RuntimeError(
+        f"unsupported checkpoint format for {spec.name!r}: keys={list(state.keys())[:8]}"
+    )
+
+
 def load_pretrained(
     name: str = "ad_transfer_v2_clean",
     *,
@@ -221,35 +262,18 @@ def load_pretrained(
     path = _ensure_cached(spec)
 
     state = torch.load(path, map_location="cpu", weights_only=False)
-    if isinstance(state, dict) and "model_state" in state:
-        state_dict = state["model_state"]
-        ckpt_config = state.get("model_config", state.get("config", spec.config))
-    elif isinstance(state, dict) and "state_dict" in state:
-        state_dict = state["state_dict"]
-        ckpt_config = state.get("config", spec.config)
-    elif isinstance(state, dict) and "model" in state:
-        state_dict = state["model"]
-        ckpt_config = state.get("config", spec.config)
-    else:
-        state_dict = state
-        ckpt_config = spec.config
-
-    cfg = dict(spec.config)
-    cfg.update({k: ckpt_config[k] for k in cfg if k in ckpt_config})
+    state_dict, ckpt_config, args = _state_dict_from_checkpoint(state, spec)
 
     if spec.kind == "ad_transfer":
+        cfg = _constructor_config(AlphaDynamicsModel, spec.config, args, ckpt_config)
         model = AlphaDynamicsModel(**cfg)
     elif spec.kind == "ad_init":
+        cfg = _constructor_config(ADInit, spec.config, args, ckpt_config)
         model = ADInit(**cfg)
     else:
         raise RuntimeError(f"unknown model kind {spec.kind!r}")
 
-    missing, unexpected = model.load_state_dict(state_dict, strict=False)
-    if missing or unexpected:
-        sys.stderr.write(
-            f"[alphadynamics] note: missing={list(missing)[:4]}... "
-            f"unexpected={list(unexpected)[:4]}...\n"
-        )
+    model.load_state_dict(state_dict, strict=True)
 
     model = model.to(device)
     if eval_mode:

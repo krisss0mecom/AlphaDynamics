@@ -549,8 +549,8 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
             seq = input("Sequence (1-letter AA, e.g. AAAY): ").strip().upper()
             if not seq:
                 print("  (please enter at least one residue)")
-            elif len(seq) > 200:
-                print("  (warning: model trained on 4-98 residues; >200 may be unreliable)")
+            elif len(seq) > 20:
+                print("  (warning: sequences longer than 20 aa are outside the calibrated scope)")
 
         ne_str = input("How many independent trajectories? [16]: ").strip() or "16"
         rs_str = input("How many timesteps per trajectory? [2500]: ").strip() or "2500"

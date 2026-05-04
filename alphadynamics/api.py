@@ -11,16 +11,19 @@ and the lower-level rollout functions in :mod:`alphadynamics.rollout`.
 from __future__ import annotations
 
 import math
+import warnings
 
 import numpy as np
 import torch
 
+from .ad_init import aa_one_hot
 from .data import as_tensor, residue_ids, temperature_tensor
 from .rollout import rollout
 from .weights import load_pretrained
 
 
 _AA_VOCAB = set("ACDEFGHIKLMNPQRSTVWYX")
+_CALIBRATED_MAX_LEN = 20
 
 
 def _check_sequence(sequence: str) -> str:
@@ -45,6 +48,7 @@ def predict_torsion_ensemble(
     sequence: str,
     *,
     model_name: str = "ad_transfer_v2_clean",
+    init_model_name: str | None = "ad_init_full_1477",
     n_ensemble: int = 16,
     rollout_steps: int = 2500,
     seed: int | None = 42,
@@ -61,7 +65,11 @@ def predict_torsion_ensemble(
         One-letter amino-acid string (e.g. ``"AAAY"``). Length determines the
         number of residues. ``X`` is allowed for unknown.
     model_name : str
-        Pretrained checkpoint to use. Default: ``"ad_transfer_v2_clean"``.
+        AD-Transfer checkpoint to use. Default: ``"ad_transfer_v2_clean"``.
+    init_model_name : str or None
+        AD-Init checkpoint used to sample sequence-conditioned initial
+        torsions. Set to ``None`` to fall back to a uniform random torsion
+        seed (legacy behaviour).
     n_ensemble : int
         Number of independent rollouts (each with a different seed frame).
     rollout_steps : int
@@ -87,13 +95,53 @@ def predict_torsion_ensemble(
     seq = _check_sequence(sequence)
     n_res = len(seq)
 
+    if n_res > _CALIBRATED_MAX_LEN:
+        warnings.warn(
+            f"sequence length {n_res} > {_CALIBRATED_MAX_LEN}: model is best "
+            f"validated on short peptides (4-15 aa); longer chains are outside "
+            f"the calibrated scope. Aggregate Ramachandran plots will tend "
+            f"toward an 'average amino-acid' pattern — trust per-residue "
+            f"panels only.",
+            UserWarning,
+            stacklevel=2,
+        )
+
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     device_t = torch.device(device)
 
     model = load_pretrained(model_name, device=device_t, eval_mode=True)
 
-    rng = np.random.default_rng(seed)
+    if init_model_name is None:
+        rng = np.random.default_rng(seed)
+        seed_frames = [_seed_frame(n_res, rng) for _ in range(n_ensemble)]
+    else:
+        try:
+            init_model = load_pretrained(init_model_name, device=device_t, eval_mode=True)
+        except Exception as exc:
+            import sys
+            sys.stderr.write(
+                f"[alphadynamics] warning: could not load AD-Init {init_model_name!r} "
+                f"({exc}); falling back to uniform random torsion seeds.\n"
+            )
+            rng = np.random.default_rng(seed)
+            seed_frames = [_seed_frame(n_res, rng) for _ in range(n_ensemble)]
+        else:
+            if seed is not None:
+                torch.manual_seed(seed)
+                if torch.cuda.is_available():
+                    torch.cuda.manual_seed_all(seed)
+            aa = aa_one_hot(seq, device_t)
+            with torch.no_grad():
+                samples = init_model.sample_initial(
+                    aa,
+                    n_res,
+                    n_res,
+                    n_samples=n_ensemble,
+                    temp_K=temperature_K,
+                ).detach().cpu().numpy().astype(np.float32, copy=False)
+            seed_frames = [samples[k] for k in range(n_ensemble)]
+
     output = np.empty((n_ensemble, rollout_steps, n_res, 2), dtype=np.float32)
 
     total_steps = n_ensemble * rollout_steps
@@ -118,10 +166,9 @@ def predict_torsion_ensemble(
 
     try:
         for k in range(n_ensemble):
-            seed_frame = _seed_frame(n_res, rng)
             traj = rollout(
                 model,
-                seed_frame,
+                seed_frames[k],
                 n_steps=rollout_steps,
                 device=device_t,
                 sequence=seq,
