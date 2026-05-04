@@ -1,6 +1,6 @@
 ---
 name: alphadynamics
-description: Run AlphaDynamics protein torsion-dynamics prediction. Use when user wants to predict, analyze, or compare backbone dihedral (phi/psi) ensembles for a peptide / short protein sequence — e.g. "predict torsions for AAAY", "what conformations does KLVFFAE adopt", "compare AAAY vs AAAW", "Ramachandran for [sequence]". The Python package `alphadynamics` (v0.3.1+) is already pip-installed system-wide.
+description: Run AlphaDynamics protein torsion-dynamics prediction. Use when user wants to predict, analyze, or compare backbone dihedral (phi/psi) ensembles for a peptide / short protein sequence — e.g. "predict torsions for AAAY", "what conformations does KLVFFAE adopt", "compare AAAY vs AAAW", "Ramachandran for [sequence]". The Python package `alphadynamics` (v0.3.9+) is already pip-installed system-wide.
 ---
 
 # AlphaDynamics — predict protein torsion ensembles
@@ -19,8 +19,15 @@ This skill is for running the locally-installed `alphadynamics` package
 ### 1. Get sequence from user
 
 If user gave a 1-letter amino-acid sequence (e.g. `AAAY`, `KLVFFAE`),
-use it directly. If unclear, ask once. Length 4-100 is the trained range;
-warn if shorter or longer.
+use it directly. If unclear, ask once.
+
+**Calibrated scope is 4-15 aa.** Sequences longer than 20 aa are outside
+the calibrated scope — predictions still run, but warn the user that the
+propagator does not exchange information across residues, so aggregate
+Ramachandran density for long diverse chains tends toward an "average
+amino-acid" pattern. For chains >20 aa prefer per-residue Ramachandran
+panels over the aggregate plot. The package emits a soft `UserWarning`
+automatically for N>20.
 
 ### 2. Run prediction
 
@@ -97,11 +104,22 @@ The user IS the author of this model. Don't oversell. Be honest about:
 - **Density only, not kinetics.** Model captures *where* the peptide spends
   time on the Ramachandran torus, not *when* transitions happen. Don't
   claim residence times or transition rates.
-- **Trained on 4-98 residues.** Reliability degrades outside this range;
-  N>200 is unreliable.
+- **Calibrated scope is 4-15 aa.** The training corpus mixed 4AA + N=48 +
+  N=98 mdCATH peptides, but the phase-flow propagator couples oscillators
+  within a residue and does NOT exchange information across residues. At
+  lengths above ~20 aa the per-residue signal collapses toward an "average
+  amino-acid" Ramachandran. Aggregate plots for two diverse 30-aa chains
+  will look indistinguishable. Use per-residue panels above ~20 aa.
 - **Backbone only.** No side-chain rotamers, no Cartesian xyz, no docking.
-- **Mean JSD on 4AA test:** 0.196 vs Microsoft Timewarp 0.468 (2.39x
-  closer). On longer N=48 peptides JSD ~0.276; on N=98 ~0.389.
+- **Headline benchmark:** mean Ramachandran JSD 0.196 on the canonical 4AA
+  test set (3 held-out tetrapeptides AAAY/AACE/AAEW), vs Microsoft Timewarp
+  0.468 — 2.39× lower JSD at ~3000× fewer parameters. Beyond 4AA, longer-
+  chain numbers were measured on internal mdCATH holdouts (not a public
+  head-to-head test set) and become uninformative for aggregate density
+  above ~20 aa.
+- **Initial torsions are sequence-conditioned** (AD-Init prior) by default
+  since v0.3.9, not uniform random. Pass `init_model_name=None` to fall
+  back to the legacy uniform random seed.
 
 ## Available models
 
@@ -110,7 +128,9 @@ ad_transfer_v2_clean (default)  — main propagator, 78K params
 ad_init_full_1477               — von Mises mixture prior, 45K params
 ```
 
-Use the default unless user requests `ad_init` for prior-only inspection.
+Use the default. Since v0.3.9, AD-Init is also automatically used as the
+initial-torsion sampler (sequence-conditioned seed instead of uniform
+random) — no need to load it manually.
 
 ## Resources
 
