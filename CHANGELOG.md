@@ -2,6 +2,19 @@
 
 All notable changes to AlphaDynamics will be documented in this file.
 
+## v0.4.2 — 2026-05-09 (Windows compatibility hotfix)
+
+### Fixed
+- **Windows charmap (cp1252) crash on PDB generation**. v0.4.1 used Unicode arrow (→) and Å in print statements, which crashed on default Windows console encoding (cp1252). Symptom: `(3D PDB generation skipped: charmap codec cant encode character)`. Result: PDB never written.
+- Replaced Unicode arrows with ASCII `->` in interactive output.
+- Replaced Å (Angstrom symbol) with `A` in unit labels.
+- Replaced Cα with Ca in user-facing prints.
+- Added `sys.stdout.reconfigure(encoding="utf-8")` on Windows for safety.
+
+### Notes
+- Same v0.4.1 functionality otherwise.
+- HTML/PNG plot files are unaffected (plotly/matplotlib write Unicode directly to file, no terminal encoding issue).
+
 ## v0.4.1 — 2026-05-09 (same day patch)
 
 ### Changed — auto-generate PDB

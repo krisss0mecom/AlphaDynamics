@@ -352,6 +352,15 @@ def _make_ramachandran_plot(traj, sequence: str, out_path: str) -> bool:
 # --------------------------------------------------------------------------- #
 
 
+# v0.4.2: ensure stdout/stderr can encode unicode on Windows (cp1252 charmap)
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
+
 def _cmd_version(args: argparse.Namespace) -> int:
     print(f"alphadynamics {__version__}")
     return 0
@@ -468,8 +477,8 @@ def _cmd_predict(args: argparse.Namespace) -> int:
             diag = trajectory_diagnostics(member)
             print(f"[pdb] wrote {pdb_path}  ({len(member)} frames × {len(seq_upper)} residues)",
                   file=sys.stderr)
-            print(f"[pdb] Rg = {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} Å  |  "
-                  f"end-to-end = {diag['end_to_end_mean']:.2f} ± {diag['end_to_end_std']:.2f} Å",
+            print(f"[pdb] Rg = {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} A  |  "
+                  f"end-to-end = {diag['end_to_end_mean']:.2f} ± {diag['end_to_end_std']:.2f} A",
                   file=sys.stderr)
             print(f"[pdb] open in PyMOL/VMD/ChimeraX, or browse:",
                   file=sys.stderr)
@@ -579,7 +588,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "rebuild",
         help="rebuild 3D backbone (multi-model PDB) from torsion .npz trajectory",
         description=(
-            "Reconstruct backbone heavy atoms (N, Cα, C, O) from a torsion-angle "
+            "Reconstruct backbone heavy atoms (N, Ca, C, O) from a torsion-angle "
             "trajectory using NeRF (Parsons 2005) and standard Engh-Huber bond "
             "geometry. Output is a multi-model PDB suitable for PyMOL / VMD / "
             "ChimeraX. Backbone-only — no side chains, no hydrogens."
@@ -669,12 +678,12 @@ def _cmd_rebuild(args: argparse.Namespace) -> int:
 
     if args.diagnostics:
         print()
-        print("Trajectory diagnostics (Cα-only):")
+        print("Trajectory diagnostics (Ca-only):")
         diag = trajectory_diagnostics(member)
-        print(f"  Radius of gyration (Rg):  {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} Å"
+        print(f"  Radius of gyration (Rg):  {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} A"
               f"   range [{diag['rg'].min():.2f}, {diag['rg'].max():.2f}]")
-        print(f"  End-to-end (Cα_1 → Cα_N): {diag['end_to_end_mean']:.2f} ± "
-              f"{diag['end_to_end_std']:.2f} Å"
+        print(f"  End-to-end (Ca_1 -> Ca_N): {diag['end_to_end_mean']:.2f} ± "
+              f"{diag['end_to_end_std']:.2f} A"
               f"   range [{diag['end_to_end'].min():.2f}, "
               f"{diag['end_to_end'].max():.2f}]")
         print()
@@ -798,7 +807,7 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
                 html_path += ".html"
             if _make_ramachandran_html(traj, seq, html_path):
                 print(f"Wrote interactive Ramachandran (HTML): {html_path}")
-                print("  → open in browser: zoom, pan, hover for density values")
+                print("  -> open in browser: zoom, pan, hover for density values")
 
         if want_plot or want_html:
             print()
@@ -817,10 +826,10 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
             trajectory_to_pdb(member, seq, pdb_path)
             diag = trajectory_diagnostics(member)
             print(f"3D backbone PDB:  {pdb_path}  ({len(member)} frames × {len(seq)} residues)")
-            print(f"  Rg = {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} Å  |  "
-                  f"end-to-end = {diag['end_to_end_mean']:.2f} ± {diag['end_to_end_std']:.2f} Å")
+            print(f"  Rg = {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} A  |  "
+                  f"end-to-end = {diag['end_to_end_mean']:.2f} ± {diag['end_to_end_std']:.2f} A")
             print(f"  Open in PyMOL/VMD/ChimeraX, or browse online:")
-            print(f"  → https://krisss0mecom.github.io/AlphaDynamics/examples/3d_movie_demo/viewer.html")
+            print(f"  -> https://krisss0mecom.github.io/AlphaDynamics/examples/3d_movie_demo/viewer.html")
             print()
         except Exception as exc:
             print(f"(3D PDB generation skipped: {exc})")
