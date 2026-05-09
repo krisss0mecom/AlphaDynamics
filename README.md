@@ -124,6 +124,34 @@ alphadynamics version
 alphadynamics --help     # full subcommand reference
 ```
 
+### Live 3D demo
+
+Three pre-generated example trajectories with an interactive 3Dmol.js viewer
+are in [`examples/3d_movie_demo/`](examples/3d_movie_demo/):
+
+| Peptide | Length | Description |
+|---|---|---|
+| KLVFFAE | 7 aa | Amyloid β16-22, β-aggregating fragment |
+| Trp-cage `NLYIQWLKDGGPSSGRPPPS` | 20 aa | Classic mini-fold benchmark |
+| AAAY | 4 aa | Paper benchmark (2.39× lower JSD than Timewarp) |
+
+To view in browser:
+```bash
+cd examples/3d_movie_demo
+python -m http.server 8000
+# open http://localhost:8000/viewer.html
+```
+
+Or once GitHub Pages is enabled for this repo:
+**[https://krisss0mecom.github.io/AlphaDynamics/examples/3d_movie_demo/viewer.html](https://krisss0mecom.github.io/AlphaDynamics/examples/3d_movie_demo/viewer.html)**
+
+Or open any `.pdb` file directly in PyMOL / VMD / ChimeraX.
+
+To regenerate from scratch:
+```bash
+bash examples/3d_movie_demo/make_demo.sh
+```
+
 ### Use from Claude Code (natural language)
 
 If you use [Claude Code](https://claude.com/claude-code), you can install

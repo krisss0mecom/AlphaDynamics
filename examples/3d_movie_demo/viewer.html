@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AlphaDynamics — 3D Backbone Trajectory Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+  }
+  header {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #30363d;
+  }
+  h1 { margin: 0 0 0.3rem 0; font-size: 1.4rem; color: #58a6ff; }
+  .tagline { color: #8b949e; font-size: 0.9rem; }
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+  }
+  .selector {
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+  }
+  .selector button {
+    background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+    padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+    transition: all 0.15s;
+  }
+  .selector button:hover { background: #30363d; }
+  .selector button.active {
+    background: #1f6feb; border-color: #1f6feb; color: white;
+  }
+  #viewer {
+    width: min(900px, 95vw);
+    height: min(600px, 70vh);
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    background: #161b22;
+    position: relative;
+  }
+  .controls {
+    display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
+    color: #8b949e; font-size: 0.85rem;
+  }
+  .controls input[type=range] { vertical-align: middle; width: 200px; }
+  .info {
+    width: min(900px, 95vw);
+    padding: 1rem;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .info strong { color: #58a6ff; }
+  .info code { background: #0d1117; padding: 0.1rem 0.3rem; border-radius: 3px; }
+  footer {
+    text-align: center; padding: 1.5rem; color: #8b949e; font-size: 0.85rem;
+    border-top: 1px solid #30363d;
+  }
+  footer a { color: #58a6ff; text-decoration: none; }
+</style>
+<script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>🧬 AlphaDynamics — 3D Backbone Trajectory Viewer</h1>
+  <div class="tagline">
+    Phase-oscillator neural propagator (41K params) → torsion dynamics → NeRF backbone reconstruction
+  </div>
+</header>
+
+<main>
+  <div class="selector">
+    <button class="active" data-pdb="klvffae_amyloid.pdb" data-name="KLVFFAE (amyloid β16-22)" data-info="7 residues — β-aggregating fragment of amyloid β-peptide">KLVFFAE 7aa</button>
+    <button data-pdb="trpcage_minifold.pdb" data-name="Trp-cage" data-info="20 residues — classic mini-fold benchmark, α-helix + PPII">Trp-cage 20aa</button>
+    <button data-pdb="aaay_4aa.pdb" data-name="AAAY" data-info="4 residues — paper benchmark, validated 2.39× lower JSD vs Timewarp">AAAY 4aa</button>
+  </div>
+
+  <div id="viewer"></div>
+
+  <div class="controls">
+    <button id="play">▶ Play</button>
+    <button id="pause">⏸ Pause</button>
+    <span>Frame: <span id="framedisp">0</span> / <span id="totalframes">?</span></span>
+    <input type="range" id="frame-slider" min="0" max="49" value="0" step="1">
+    <span style="margin-left:1rem">Speed:
+      <select id="speed">
+        <option value="100">slow</option>
+        <option value="50" selected>medium</option>
+        <option value="20">fast</option>
+      </select>
+    </span>
+  </div>
+
+  <div class="info">
+    <p><strong id="info-name">KLVFFAE (amyloid β16-22)</strong></p>
+    <p id="info-desc">7 residues — β-aggregating fragment of amyloid β-peptide</p>
+    <p>
+      <strong>How this was generated:</strong>
+      <code>alphadynamics predict --sequence KLVFFAE -o traj.npz</code><br>
+      <code>alphadynamics rebuild traj.npz -s KLVFFAE -o backbone.pdb</code>
+    </p>
+    <p>
+      <strong>Backbone heavy atoms only</strong> (N, Cα, C, O). Side chains and hydrogens not generated.
+      Reconstruction is deterministic NeRF (Parsons 2005) with Engh-Huber 1991 standard bond geometry.
+    </p>
+    <p style="color:#f85149">
+      ⚠ Torsion errors accumulate along the chain. Use as <em>diagnostic visualization</em>, not as
+      high-resolution structure prediction.
+    </p>
+  </div>
+</main>
+
+<footer>
+  <p>
+    <a href="https://github.com/krisss0mecom/AlphaDynamics">GitHub</a> ·
+    <a href="https://pypi.org/project/alphadynamics/">PyPI</a> ·
+    <a href="https://huggingface.co/krissss0/alphadynamics">HuggingFace</a> ·
+    <a href="https://huggingface.co/spaces/krissss0/alphadynamics">Try in browser</a> ·
+    <a href="https://doi.org/10.5281/zenodo.19877815">Zenodo paper</a>
+  </p>
+  <p>by Krzysztof Gwozdz · Apache 2.0</p>
+</footer>
+
+<script>
+const viewer = $3Dmol.createViewer("viewer", { backgroundColor: "#161b22" });
+let currentModel = null;
+let totalFrames = 0;
+let currentFrame = 0;
+let playing = false;
+let timer = null;
+let speed = 50;
+
+function loadPDB(pdbPath, name, desc) {
+  fetch(pdbPath)
+    .then(r => r.text())
+    .then(pdb => {
+      viewer.clear();
+      viewer.addModelsAsFrames(pdb, "pdb");
+      const models = viewer.getModel();
+      const numModels = (Array.isArray(models) ? models.length : 1);
+      // 3Dmol counts frames internally
+      totalFrames = (pdb.match(/MODEL/g) || []).length;
+      document.getElementById("totalframes").textContent = totalFrames;
+      document.getElementById("frame-slider").max = totalFrames - 1;
+      currentFrame = 0;
+
+      viewer.setStyle({}, {
+        cartoon: { color: "spectrum", thickness: 0.4, opacity: 0.95 }
+      });
+      viewer.addStyle({}, {
+        stick: { radius: 0.12, colorscheme: "default" }
+      });
+      viewer.zoomTo();
+      viewer.setFrame(0);
+      viewer.render();
+
+      document.getElementById("info-name").textContent = name;
+      document.getElementById("info-desc").textContent = desc;
+    })
+    .catch(err => {
+      console.error("Failed to load", pdbPath, err);
+      document.getElementById("viewer").innerHTML = `
+        <div style="padding:2rem;text-align:center;color:#f85149">
+          Failed to load <code>${pdbPath}</code>.<br>
+          When viewing on GitHub Pages, files load from same directory.<br>
+          Locally: serve with <code>python -m http.server</code> in this folder.
+        </div>`;
+    });
+}
+
+function setFrame(f) {
+  if (totalFrames <= 0) return;
+  currentFrame = ((f % totalFrames) + totalFrames) % totalFrames;
+  viewer.setFrame(currentFrame);
+  viewer.render();
+  document.getElementById("framedisp").textContent = currentFrame;
+  document.getElementById("frame-slider").value = currentFrame;
+}
+
+document.getElementById("play").onclick = () => {
+  if (playing) return;
+  playing = true;
+  timer = setInterval(() => setFrame(currentFrame + 1), speed);
+};
+document.getElementById("pause").onclick = () => {
+  playing = false;
+  if (timer) clearInterval(timer);
+};
+document.getElementById("frame-slider").oninput = e => {
+  if (playing) {
+    playing = false;
+    clearInterval(timer);
+  }
+  setFrame(parseInt(e.target.value, 10));
+};
+document.getElementById("speed").onchange = e => {
+  speed = parseInt(e.target.value, 10);
+  if (playing) {
+    clearInterval(timer);
+    timer = setInterval(() => setFrame(currentFrame + 1), speed);
+  }
+};
+
+document.querySelectorAll(".selector button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".selector button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    if (playing) {
+      playing = false;
+      clearInterval(timer);
+    }
+    loadPDB(
+      btn.dataset.pdb,
+      btn.dataset.name,
+      btn.dataset.info
+    );
+  };
+});
+
+// Load default
+loadPDB("klvffae_amyloid.pdb", "KLVFFAE (amyloid β16-22)",
+  "7 residues — β-aggregating fragment of amyloid β-peptide");
+</script>
+
+</body>
+</html>
