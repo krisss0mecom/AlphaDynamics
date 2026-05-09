@@ -1,14 +1,15 @@
 {
-  "title": "AlphaDynamics: A Per-System Phase-Flow Propagator for Protein Torsion Dynamics with Calibrated Rollout Fidelity",
+  "title": "AlphaDynamics: Compact Phase-Oscillator Neural Propagator for Protein Torsion Dynamics with Backbone 3D Reconstruction",
   "upload_type": "software",
-  "publication_date": "2026-04-29",
-  "version": "v2.0-preprint-2026-04-29",
+  "publication_date": "2026-05-09",
+  "version": "v0.4.0",
   "creators": [
     {
-      "name": "Gwozdz, Krzysztof"
+      "name": "Gwozdz, Krzysztof",
+      "affiliation": "Independent researcher"
     }
   ],
-  "description": "Reviewer-hardened v2 release of AlphaDynamics, a per-system neural propagator for protein backbone torsion dynamics. This release adds an anchored rollout-fidelity audit, AR(1) baseline, statistical tests, K and kappa ablations, and a shared 4AA peptide head-to-head against Microsoft Timewarp. With calibrated kappa x1 rollout inference, AlphaDynamics achieves mean Ramachandran JSD 0.014 versus 0.356 for the pretrained Microsoft Timewarp 4AA model on three out-of-training tetrapeptides. Scope: AlphaDynamics is trained from target-specific seed MD and is not a zero-shot sequence-to-dynamics model.",
+  "description": "AlphaDynamics v0.4.0 — Python package for predicting protein backbone torsion dynamics from sequence using a compact (78K params) phase-oscillator neural propagator. Achieves 2.39x lower mean Ramachandran JSD than Microsoft Timewarp 4AA model with 9,652x fewer parameters. New in v0.4.0: deterministic backbone 3D reconstruction from torsion trajectories using NeRF (Parsons 2005) with Engh-Huber 1991 standard bond geometry. Provides multi-model PDB output for visualization in PyMOL/VMD/ChimeraX, plus per-frame radius of gyration and end-to-end distance diagnostics. Scope note: best-validated for short peptides (4-15 aa); sequences longer than 20 aa are outside the calibrated scope.",
   "access_right": "open",
   "license": "Apache-2.0",
   "keywords": [
@@ -17,15 +18,27 @@
     "torsion angles",
     "phase oscillators",
     "neural ODE",
+    "Ramachandran",
+    "backbone reconstruction",
+    "NeRF",
     "mdCATH",
     "Timewarp",
-    "Ramachandran",
-    "rollout fidelity"
+    "ml-for-biology"
   ],
   "related_identifiers": [
     {
       "identifier": "https://github.com/krisss0mecom/AlphaDynamics",
       "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://pypi.org/project/alphadynamics/",
+      "relation": "isPartOf",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://huggingface.co/krissss0/alphadynamics",
+      "relation": "hasPart",
       "scheme": "url"
     }
   ]

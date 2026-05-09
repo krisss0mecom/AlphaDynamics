@@ -530,7 +530,117 @@ def _build_parser() -> argparse.ArgumentParser:
         help="HTML path (default: <output>_ramachandran.html)",
     )
     p_predict.set_defaults(func=_cmd_predict)
+
+    # ─── rebuild: NeRF reconstruction torsion → 3D backbone PDB ────────────
+    p_rebuild = sub.add_parser(
+        "rebuild",
+        help="rebuild 3D backbone (multi-model PDB) from torsion .npz trajectory",
+        description=(
+            "Reconstruct backbone heavy atoms (N, Cα, C, O) from a torsion-angle "
+            "trajectory using NeRF (Parsons 2005) and standard Engh-Huber bond "
+            "geometry. Output is a multi-model PDB suitable for PyMOL / VMD / "
+            "ChimeraX. Backbone-only — no side chains, no hydrogens."
+        ),
+    )
+    p_rebuild.add_argument(
+        "npz", type=str,
+        help="Input AlphaDynamics rollout .npz (torsions key)",
+    )
+    p_rebuild.add_argument(
+        "--sequence", "-s", type=str, required=True,
+        help="One-letter AA sequence (must match number of residues in npz)",
+    )
+    p_rebuild.add_argument(
+        "--out", "-o", type=str, default=None,
+        help="Output PDB path (default: <npz_basename>_backbone.pdb)",
+    )
+    p_rebuild.add_argument(
+        "--ensemble-idx", type=int, default=0,
+        help="Which ensemble member to export (default 0)",
+    )
+    p_rebuild.add_argument(
+        "--frames", type=int, default=None,
+        help="Subsample to N frames (default: keep all)",
+    )
+    p_rebuild.add_argument(
+        "--diagnostics", action="store_true",
+        help="Print Rg and end-to-end distance statistics",
+    )
+    p_rebuild.set_defaults(func=_cmd_rebuild)
+
     return parser
+
+
+def _cmd_rebuild(args: argparse.Namespace) -> int:
+    """Rebuild 3D backbone from torsion .npz → multi-model PDB."""
+    import os
+    import numpy as np
+    from .geometry import trajectory_to_pdb, trajectory_diagnostics
+
+    npz_path = args.npz
+    if not os.path.exists(npz_path):
+        print(f"[rebuild] error: {npz_path} not found", file=sys.stderr)
+        return 1
+
+    out_path = args.out
+    if out_path is None:
+        base = os.path.splitext(os.path.basename(npz_path))[0]
+        out_path = f"{base}_backbone.pdb"
+
+    d = np.load(npz_path, allow_pickle=True)
+    if "torsions" not in d:
+        print(f"[rebuild] error: {npz_path} has no 'torsions' key", file=sys.stderr)
+        return 1
+    traj = d["torsions"]
+    print(f"[rebuild] loaded trajectory shape={traj.shape} from {npz_path}")
+
+    # Accept (E, T, N, 2) or single (T, N, 2)
+    if traj.ndim == 4:
+        if args.ensemble_idx >= traj.shape[0]:
+            print(f"[rebuild] error: ensemble-idx {args.ensemble_idx} out of "
+                  f"range (have {traj.shape[0]})", file=sys.stderr)
+            return 1
+        member = traj[args.ensemble_idx]
+    elif traj.ndim == 3:
+        member = traj
+    else:
+        print(f"[rebuild] error: unexpected trajectory shape {traj.shape}",
+              file=sys.stderr)
+        return 1
+
+    if args.frames is not None and args.frames < len(member):
+        idx = np.linspace(0, len(member) - 1, args.frames).astype(int)
+        member = member[idx]
+        print(f"[rebuild] subsampled to {len(member)} frames")
+
+    seq = args.sequence.upper()
+    if len(seq) != member.shape[1]:
+        print(f"[rebuild] error: sequence length {len(seq)} does not match "
+              f"residues in trajectory {member.shape[1]}", file=sys.stderr)
+        return 1
+
+    print(f"[rebuild] writing backbone PDB: {len(seq)} residues × {len(member)} frames")
+    trajectory_to_pdb(member, seq, out_path)
+    size_kb = os.path.getsize(out_path) / 1024
+    print(f"[rebuild] wrote {out_path} ({size_kb:.0f} KB)")
+
+    if args.diagnostics:
+        print()
+        print("Trajectory diagnostics (Cα-only):")
+        diag = trajectory_diagnostics(member)
+        print(f"  Radius of gyration (Rg):  {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} Å"
+              f"   range [{diag['rg'].min():.2f}, {diag['rg'].max():.2f}]")
+        print(f"  End-to-end (Cα_1 → Cα_N): {diag['end_to_end_mean']:.2f} ± "
+              f"{diag['end_to_end_std']:.2f} Å"
+              f"   range [{diag['end_to_end'].min():.2f}, "
+              f"{diag['end_to_end'].max():.2f}]")
+        print()
+        print("Tips:")
+        print(f"  Open in PyMOL:    pymol {out_path}")
+        print(f"  Animate:          (PyMOL command) play")
+        print(f"  RMSD to ref:      align state, ref_structure")
+
+    return 0
 
 
 def _cmd_interactive(args: argparse.Namespace | None = None) -> int:

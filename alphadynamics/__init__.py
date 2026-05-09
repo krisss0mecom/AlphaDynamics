@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import os as _os
 
-__version__ = "0.3.9"
+__version__ = "0.4.0"
 __author__ = "Krzysztof Gwozdz"
 __email__ = "krisss0gwo@gmail.com"
 __license__ = "Apache-2.0"
@@ -31,6 +31,13 @@ from .ad_init import ADInit
 from .rollout import rollout
 from .weights import load_pretrained, list_available_weights, available_models
 from .api import predict_torsion_ensemble
+from .geometry import (
+    torsions_to_backbone,
+    trajectory_to_pdb,
+    radius_of_gyration,
+    end_to_end_distance,
+    trajectory_diagnostics,
+)
 
 __all__ = [
     "ADInit",
@@ -39,11 +46,16 @@ __all__ = [
     "available_models",
     "canonical_jsd",
     "discover_npz",
+    "end_to_end_distance",
     "list_available_weights",
     "load_pretrained",
     "predict_torsion_ensemble",
+    "radius_of_gyration",
     "rollout",
     "split_paths",
+    "torsions_to_backbone",
+    "trajectory_diagnostics",
+    "trajectory_to_pdb",
     "visual_jsd",
     "__author__",
     "__email__",

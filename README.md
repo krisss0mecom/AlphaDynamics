@@ -78,12 +78,48 @@ traj = predict_torsion_ensemble(
 print(traj.shape)     # (16, 2500, 4, 2)
 ```
 
+### 3D backbone reconstruction (NEW in v0.4.0)
+
+Convert torsion trajectory `.npz` to a multi-model PDB you can open in
+PyMOL / VMD / ChimeraX. Backbone heavy atoms only (N, Cα, C, O); no side
+chains, no hydrogens. Uses NeRF (Parsons 2005) with Engh-Huber 1991 bond
+geometry — fully deterministic, zero ML.
+
+```bash
+alphadynamics predict --sequence KLVFFAE --output klvffae.npz
+alphadynamics rebuild klvffae.npz --sequence KLVFFAE -o klvffae.pdb --diagnostics
+pymol klvffae.pdb        # animate the trajectory
+```
+
+Or from Python:
+
+```python
+from alphadynamics import predict_torsion_ensemble, trajectory_to_pdb
+traj = predict_torsion_ensemble("KLVFFAE", n_ensemble=4, rollout_steps=200)
+trajectory_to_pdb(traj[0], "KLVFFAE", "klvffae.pdb")
+```
+
+Per-frame diagnostics:
+
+```python
+from alphadynamics import trajectory_diagnostics
+diag = trajectory_diagnostics(traj[0])
+print(f"Rg = {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} Å")
+print(f"end-to-end = {diag['end_to_end_mean']:.2f} Å")
+```
+
+> ⚠️ Note: torsion errors accumulate along the chain; for long peptides
+> (N > ~50) end-to-end displacement can be substantial even for small
+> per-residue errors. Use as **diagnostic visualization**, not as
+> high-resolution structure prediction.
+
 ### Other CLI commands
 
 ```bash
 alphadynamics            # interactive prompt (NEW in v0.3.1)
 alphadynamics info       # banner, headline metric, credits
 alphadynamics models     # list available pretrained weights
+alphadynamics rebuild    # NeRF reconstruction torsion → 3D backbone PDB (NEW v0.4.0)
 alphadynamics version
 alphadynamics --help     # full subcommand reference
 ```
