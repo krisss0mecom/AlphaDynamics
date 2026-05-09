@@ -271,8 +271,8 @@ def trajectory_to_pdb(
 
     atom_names = ["N", "CA", "C", "O"]
 
-    with open(out_pdb, "w") as f:
-        f.write(f"REMARK    AlphaDynamics torsion trajectory → 3D backbone\n")
+    with open(out_pdb, "w", encoding="utf-8") as f:
+        f.write(f"REMARK    AlphaDynamics torsion trajectory -> 3D backbone\n")
         f.write(f"REMARK    Sequence: {sequence}\n")
         f.write(f"REMARK    Frames:   {T}\n")
         f.write(f"REMARK    Residues: {N}\n")

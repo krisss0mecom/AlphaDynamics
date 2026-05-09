@@ -2,6 +2,16 @@
 
 All notable changes to AlphaDynamics will be documented in this file.
 
+## v0.4.3 — 2026-05-09 (final Windows hotfix)
+
+### Fixed
+- **Real source of `charmap codec cant encode` on Windows**: `->` in `geometry.py:trajectory_to_pdb()` REMARK header. The PDB file was opened without explicit encoding, so Windows used cp1252 (charmap) which doesnt support U+2192. Crash position 43 = exact location of arrow.
+- v0.4.2 only fixed CLI prints; geometry.py still wrote -> in the PDB header itself.
+- Now: `open(out_pdb, "w", encoding="utf-8")` + ASCII `->` in REMARK.
+
+### Verified
+- cp1252 strict-encoding simulation now writes PDB without exception.
+
 ## v0.4.2 — 2026-05-09 (Windows compatibility hotfix)
 
 ### Fixed
