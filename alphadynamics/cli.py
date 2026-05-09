@@ -448,6 +448,36 @@ def _cmd_predict(args: argparse.Namespace) -> int:
         if _make_ramachandran_html(traj, seq_upper, str(html_path)):
             print(f"[plot-html] wrote {html_path}  (open in browser)", file=sys.stderr)
 
+    # Auto-generate 3D backbone PDB (NEW v0.4.1) — unless --no-pdb
+    if not getattr(args, "no_pdb", False):
+        try:
+            from .geometry import trajectory_to_pdb, trajectory_diagnostics
+            requested_pdb = args.pdb_out or str(out_path).replace(".npz", ".pdb")
+            if not requested_pdb.endswith(".pdb"):
+                requested_pdb += ".pdb"
+            pdb_path = _safe_output_path(requested_pdb, f"alphadynamics_{seq_upper}_backbone.pdb")
+
+            # Use ensemble member 0; subsample to keep file small
+            member = traj[0]
+            max_frames = getattr(args, "pdb_frames", 50)
+            if len(member) > max_frames:
+                idx = np.linspace(0, len(member) - 1, max_frames).astype(int)
+                member = member[idx]
+
+            trajectory_to_pdb(member, seq_upper, str(pdb_path))
+            diag = trajectory_diagnostics(member)
+            print(f"[pdb] wrote {pdb_path}  ({len(member)} frames × {len(seq_upper)} residues)",
+                  file=sys.stderr)
+            print(f"[pdb] Rg = {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} Å  |  "
+                  f"end-to-end = {diag['end_to_end_mean']:.2f} ± {diag['end_to_end_std']:.2f} Å",
+                  file=sys.stderr)
+            print(f"[pdb] open in PyMOL/VMD/ChimeraX, or browse:",
+                  file=sys.stderr)
+            print(f"      https://krisss0mecom.github.io/AlphaDynamics/examples/3d_movie_demo/viewer.html",
+                  file=sys.stderr)
+        except Exception as exc:  # pragma: no cover — never block predict on PDB failure
+            print(f"[pdb] skipped (rebuild failed: {exc})", file=sys.stderr)
+
     return 0
 
 
@@ -528,6 +558,19 @@ def _build_parser() -> argparse.ArgumentParser:
     p_predict.add_argument(
         "--html-out", type=str, default=None, dest="html_out",
         help="HTML path (default: <output>_ramachandran.html)",
+    )
+    # NEW v0.4.1: automatic 3D backbone PDB
+    p_predict.add_argument(
+        "--no-pdb", action="store_true", dest="no_pdb",
+        help="Skip 3D backbone PDB generation (default: PDB written automatically)",
+    )
+    p_predict.add_argument(
+        "--pdb-out", type=str, default=None, dest="pdb_out",
+        help="PDB path (default: <output>.pdb)",
+    )
+    p_predict.add_argument(
+        "--pdb-frames", type=int, default=50, dest="pdb_frames",
+        help="Subsample trajectory to this many frames in PDB (default: 50)",
     )
     p_predict.set_defaults(func=_cmd_predict)
 
@@ -758,6 +801,29 @@ def _cmd_interactive(args: argparse.Namespace | None = None) -> int:
                 print("  → open in browser: zoom, pan, hover for density values")
 
         if want_plot or want_html:
+            print()
+
+        # Auto-generate 3D backbone PDB (NEW v0.4.1)
+        try:
+            from .geometry import trajectory_to_pdb, trajectory_diagnostics
+            pdb_path = out_path.replace(".npz", ".pdb")
+            if not pdb_path.endswith(".pdb"):
+                pdb_path += ".pdb"
+
+            member = traj[0]
+            if len(member) > 50:
+                idx = np.linspace(0, len(member) - 1, 50).astype(int)
+                member = member[idx]
+            trajectory_to_pdb(member, seq, pdb_path)
+            diag = trajectory_diagnostics(member)
+            print(f"3D backbone PDB:  {pdb_path}  ({len(member)} frames × {len(seq)} residues)")
+            print(f"  Rg = {diag['rg_mean']:.2f} ± {diag['rg_std']:.2f} Å  |  "
+                  f"end-to-end = {diag['end_to_end_mean']:.2f} ± {diag['end_to_end_std']:.2f} Å")
+            print(f"  Open in PyMOL/VMD/ChimeraX, or browse online:")
+            print(f"  → https://krisss0mecom.github.io/AlphaDynamics/examples/3d_movie_demo/viewer.html")
+            print()
+        except Exception as exc:
+            print(f"(3D PDB generation skipped: {exc})")
             print()
 
         print("Tip: load in Python with")

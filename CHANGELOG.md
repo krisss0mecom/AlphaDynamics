@@ -2,6 +2,21 @@
 
 All notable changes to AlphaDynamics will be documented in this file.
 
+## v0.4.1 — 2026-05-09 (same day patch)
+
+### Changed — auto-generate PDB
+- `alphadynamics predict` now **automatically writes both `.npz` and `.pdb`** by default.
+  Previously you had to run `alphadynamics rebuild` separately. This was confusing UX.
+- Interactive prompt also auto-generates PDB after npz.
+- New flag `--no-pdb` to skip PDB generation if you only want torsions.
+- New flag `--pdb-out` to override PDB output path.
+- New flag `--pdb-frames` (default: 50) to subsample trajectory in PDB.
+
+### Notes
+- PDB uses ensemble member 0; subsampled to 50 frames for compact file size.
+- Diagnostics (Rg, end-to-end) printed automatically.
+- Link to live online viewer printed for convenience.
+
 ## v0.4.0 — 2026-05-09
 
 ### Added — 3D backbone reconstruction

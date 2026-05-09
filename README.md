@@ -78,18 +78,26 @@ traj = predict_torsion_ensemble(
 print(traj.shape)     # (16, 2500, 4, 2)
 ```
 
-### 3D backbone reconstruction (NEW in v0.4.0)
+### 3D backbone reconstruction (auto-generated since v0.4.1)
 
-Convert torsion trajectory `.npz` to a multi-model PDB you can open in
-PyMOL / VMD / ChimeraX. Backbone heavy atoms only (N, Cα, C, O); no side
-chains, no hydrogens. Uses NeRF (Parsons 2005) with Engh-Huber 1991 bond
-geometry — fully deterministic, zero ML.
+Since v0.4.1, `alphadynamics predict` **automatically generates both `.npz` and `.pdb`**.
+You can open the PDB directly in PyMOL / VMD / ChimeraX:
 
 ```bash
-alphadynamics predict --sequence KLVFFAE --output klvffae.npz
-alphadynamics rebuild klvffae.npz --sequence KLVFFAE -o klvffae.pdb --diagnostics
+alphadynamics predict --sequence KLVFFAE -o klvffae.npz
+# Wrote: klvffae.npz  (torsion trajectory)
+# Wrote: klvffae.pdb  (3D backbone, automatic)
+
 pymol klvffae.pdb        # animate the trajectory
 ```
+
+The PDB contains backbone heavy atoms only (N, Cα, C, O); no side chains,
+no hydrogens. Uses NeRF (Parsons 2005) with Engh-Huber 1991 bond geometry
+— fully deterministic, zero ML.
+
+To skip PDB generation: `--no-pdb`. To customize: `--pdb-out path.pdb`,
+`--pdb-frames N`. Manual rebuild (e.g. for old `.npz` files):
+`alphadynamics rebuild file.npz -s SEQ -o file.pdb`.
 
 Or from Python:
 
@@ -119,7 +127,8 @@ print(f"end-to-end = {diag['end_to_end_mean']:.2f} Å")
 alphadynamics            # interactive prompt (NEW in v0.3.1)
 alphadynamics info       # banner, headline metric, credits
 alphadynamics models     # list available pretrained weights
-alphadynamics rebuild    # NeRF reconstruction torsion → 3D backbone PDB (NEW v0.4.0)
+alphadynamics rebuild    # NeRF reconstruction torsion → 3D backbone PDB (separate)
+                         # NOTE: 'predict' auto-generates PDB since v0.4.1
 alphadynamics version
 alphadynamics --help     # full subcommand reference
 ```
