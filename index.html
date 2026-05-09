@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AlphaDynamics — Compact Phase-Oscillator Neural Propagator for Protein Torsion Dynamics</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Compact (78K params) phase-oscillator neural propagator for protein torsion dynamics. 2.39× lower JSD than Microsoft Timewarp at 9,652× fewer parameters.">
+<style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    line-height: 1.6;
+  }
+  header {
+    padding: 3rem 1rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid #30363d;
+  }
+  h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2.5rem;
+    background: linear-gradient(90deg, #58a6ff, #d2a8ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .tagline { color: #8b949e; font-size: 1.1rem; }
+  main {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .hero {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .hero h2 { margin-top: 0; color: #58a6ff; }
+  .links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.8rem;
+    margin: 1.5rem 0;
+  }
+  .links a {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  .links a:hover {
+    background: #30363d;
+    border-color: #58a6ff;
+    color: #58a6ff;
+  }
+  .links a.primary {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: white;
+  }
+  .links a.primary:hover {
+    background: #388bfd;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .stat {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #58a6ff;
+  }
+  .stat-label {
+    color: #8b949e;
+    font-size: 0.85rem;
+  }
+  pre {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    color: #c9d1d9;
+  }
+  code { color: #79c0ff; }
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #8b949e;
+    font-size: 0.9rem;
+    border-top: 1px solid #30363d;
+    margin-top: 3rem;
+  }
+  footer a { color: #58a6ff; text-decoration: none; }
+  h2 { color: #58a6ff; margin-top: 2.5rem; }
+  ul li { margin: 0.4rem 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧬 AlphaDynamics</h1>
+  <div class="tagline">
+    Compact phase-oscillator neural propagator for protein torsion dynamics
+  </div>
+</header>
+
+<main>
+
+<div class="hero">
+  <h2>2.39× lower JSD than Microsoft Timewarp · 9,652× fewer parameters</h2>
+  <p>
+    AlphaDynamics is a sequence-only neural propagator that predicts the equilibrium
+    Ramachandran (φ, ψ) density of any peptide from sequence alone. Built on
+    phase-oscillator dynamics rather than Cartesian transformer matrices.
+  </p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value">41K</div>
+      <div class="stat-label">parameters (V7)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">2.39×</div>
+      <div class="stat-label">lower JSD vs Timewarp</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">9,652×</div>
+      <div class="stat-label">smaller than Timewarp</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">3,400+</div>
+      <div class="stat-label">PyPI downloads</div>
+    </div>
+  </div>
+
+  <div class="links">
+    <a class="primary" href="examples/3d_movie_demo/viewer.html">🎬 Live 3D demo</a>
+    <a href="https://huggingface.co/spaces/krissss0/alphadynamics">🤗 Try in browser</a>
+    <a href="https://github.com/krisss0mecom/AlphaDynamics">🐙 GitHub</a>
+    <a href="https://pypi.org/project/alphadynamics/">📦 PyPI</a>
+    <a href="https://huggingface.co/krissss0/alphadynamics">🤗 Model card</a>
+    <a href="https://doi.org/10.5281/zenodo.19877815">📄 Paper v2</a>
+  </div>
+</div>
+
+<h2>Quickstart</h2>
+
+<pre><code>pip install -U alphadynamics
+
+# Predict torsion ensemble
+alphadynamics predict --sequence KLVFFAE -o klvffae.npz
+
+# Reconstruct 3D backbone (NEW v0.4.0)
+alphadynamics rebuild klvffae.npz -s KLVFFAE -o klvffae.pdb --diagnostics
+
+# Visualize
+pymol klvffae.pdb     # animated 3D backbone trajectory</code></pre>
+
+<h2>What it does</h2>
+
+<ul>
+  <li><strong>Predicts torsion dynamics</strong> — equilibrium ensemble of (φ, ψ) angles per residue from sequence alone</li>
+  <li><strong>Reconstructs 3D backbone</strong> — deterministic NeRF (Parsons 2005) converts torsion to multi-model PDB</li>
+  <li><strong>Diagnostics</strong> — per-frame radius of gyration and end-to-end distance</li>
+  <li><strong>Cross-platform</strong> — runs on CPU (Jetson Orin Nano works), no GPU required</li>
+</ul>
+
+<h2>Architecture</h2>
+
+<p>
+  Phase-oscillator neural ODE on the torus S¹×S¹: 160 coupled oscillators with
+  RK4 integration, von Mises mixture output. <strong>ZERO nn.Linear, ZERO nn.Conv</strong> —
+  pure phase dynamics. Inductive bias matched to natural geometry of torsion angles
+  yields 30× data efficiency vs Cartesian transformers.
+</p>
+
+<h2>Author</h2>
+
+<p>
+  Krzysztof Gwozdz, independent researcher 🇵🇱<br>
+  <a href="mailto:krisss0gwo@gmail.com">krisss0gwo@gmail.com</a>
+</p>
+
+<p>
+  Apache 2.0 — free for any use including commercial.
+</p>
+
+</main>
+
+<footer>
+  <p>
+    <a href="https://github.com/krisss0mecom/AlphaDynamics">GitHub</a> ·
+    <a href="https://pypi.org/project/alphadynamics/">PyPI</a> ·
+    <a href="https://huggingface.co/krissss0/alphadynamics">HuggingFace</a> ·
+    <a href="https://doi.org/10.5281/zenodo.19877815">Zenodo</a>
+  </p>
+  <p>
+    Built on <a href="https://3Dmol.org">3Dmol.js</a> for in-browser molecular visualization.
+  </p>
+</footer>
+
+</body>
+</html>
